@@ -16,3 +16,5 @@ docker rm my-game-container
 # --env-file .env: .env 파일의 환경변수를 컨테이너에 주입
 docker run -d -p 8000:80 --name my-game-container --env-file .env my-game-backend
 ```
+
+pip freeze > requirements.txt
