@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 from google.genai import types
 from PIL import Image, ImageDraw
 from io import BytesIO
-import base64
 
 
 # .env 파일에서 환경 변수를 로드합니다.

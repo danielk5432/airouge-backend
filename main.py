@@ -1,14 +1,17 @@
 # main.py
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles # StaticFiles 임포트
 import uvicorn
 from pydantic import BaseModel
 from services.gemini_service import create_character
-import uuid
 import json
+import os
+from services.gemini_service import create_character
+from security.admin_auth import get_current_admin_user
+import secrets
 
 app = FastAPI()
 
@@ -41,14 +44,15 @@ def handle_create_character(request: CharacterCreateRequest):
 
 @app.get("/")
 def read_root():
-    return FileResponse("admin.html")
+    return {"message": "AI-Rouge Backend is running!"}
 
 @app.get("/admin")
-def get_admin_pate():
+def get_admin_page(username: str = Depends(get_current_admin_user)):
+    """관리자 페이지를 반환합니다. (관리자만 접근 가능)"""
     return FileResponse("admin.html")
     
 @app.get("/test")
-def get_test_html():
+def get_test_html(username: str = Depends(get_current_admin_user)):
     return FileResponse("test.html")
 
 if __name__ == "__main__":
@@ -58,12 +62,12 @@ if __name__ == "__main__":
 # --- 디버그용 API 엔드포인트 ---
 
 @app.get("/api/characters")
-def get_characters_list():
+def get_characters_list(username: str = Depends(get_current_admin_user)):
     """저장된 모든 캐릭터 목록을 반환합니다."""
     return get_all_characters_from_file()
 
 @app.post("/api/characters")
-def handle_create_character_and_save(request: CharacterCreateRequest):
+def handle_create_character_and_save(request: CharacterCreateRequest, username: str = Depends(get_current_admin_user)):
     """캐릭터를 생성하고 파일에 저장합니다."""
     # 사용자님의 기존 AI 로직 호출 (수정하지 않음)
     character_data = create_character(request.user_prompt)
@@ -75,7 +79,7 @@ def handle_create_character_and_save(request: CharacterCreateRequest):
     return saved_character
 
 @app.delete("/api/characters/{character_id}")
-def handle_delete_character(character_id: str):
+def handle_delete_character(character_id: str, username: str = Depends(get_current_admin_user)):
     """ID로 특정 캐릭터를 삭제합니다."""
     success = delete_character_from_file(character_id)
     if not success:
@@ -103,13 +107,41 @@ def save_character_to_file(character_data: dict):
     return character_data
 
 def delete_character_from_file(character_id: str):
-    """ID를 기준으로 캐릭터를 삭제합니다."""
+    """ID를 기준으로 캐릭터를 삭제하고, 연관된 이미지 파일도 삭제합니다."""
     characters = get_all_characters_from_file()
+    
+    char_to_delete = None
+    # 삭제할 캐릭터를 찾습니다.
+    for char in characters:
+        if char.get('id') == character_id:
+            char_to_delete = char
+            break
+    
+    # 캐릭터를 찾지 못했다면, False를 반환합니다.
+    if not char_to_delete:
+        return False
+
+    # --- 이미지 파일 삭제 로직 추가 ---
+    image_url = char_to_delete.get('image_url')
+    if image_url:
+        # URL 경로 (예: /static/images/...)를 실제 파일 시스템 경로 (예: static/images/...)로 변환합니다.
+        # lstrip('/')은 맨 앞의 '/'만 안전하게 제거합니다.
+        image_path = image_url.lstrip('/')
+        if os.path.exists(image_path):
+            try:
+                os.remove(image_path)
+                print(f"이미지 파일 삭제 성공: {image_path}")
+            except OSError as e:
+                print(f"이미지 파일 삭제 실패: {e}")
+        else:
+            print(f"삭제할 이미지 파일을 찾을 수 없음: {image_path}")
+    # --------------------------------
+
+    # 캐릭터 데이터 리스트에서 해당 캐릭터를 제외합니다.
     updated_characters = [char for char in characters if char.get('id') != character_id]
     
-    if len(updated_characters) == len(characters):
-        return False # 아무것도 삭제되지 않음
-        
+    # 업데이트된 리스트를 다시 JSON 파일에 씁니다.
     with open(CHARACTER_FILE, "w", encoding="utf-8") as f:
         json.dump(updated_characters, f, ensure_ascii=False, indent=2)
+        
     return True
