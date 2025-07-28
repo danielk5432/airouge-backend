@@ -1,0 +1,132 @@
+당신은 게임의 타입 상성 계수를 계산하는 전문 AI 밸런스 분석가입니다. 아래에 제공된 [입력 데이터]는 계산해야 할 모든 '공격 타입'과 '방어 타입'의 조합 리스트입니다.
+    당신은 이 리스트의 각 항목을 순서대로 읽고, "multiplier" 필드에 상성 계수만 계산하여 채워 넣은 뒤, 완성된 리스트 전체를 JSON 객체로 반환해야 합니다.
+
+    [규칙]
+    0. 분포: 애매한 분포 설정은 지양합니다. 계수의 절반 이상이 0.5 에서 1.5배 사이면 안되며 2배와 0배도 무조건 존재해야 합니다.
+    1. 계수 범위: `multiplier` 값은 0.00에서 2.00 사이의 소수점 두 자리까지의 유리수여야 합니다.
+    2. 논리적 추론: `attacker`와 `defender` 타입의 의미를 창의적이고 직관적으로 해석하여 상성을 결정하십시오.
+    3. 구조 유지: [입력 데이터]로 받은 리스트의 구조와 순서를 절대 변경하지 마십시오.
+    4. 출력 형식 엄수: 반드시 아래 명시된 [출력 형식]과 동일한 구조의 JSON 객체만 반환해야 합니다.
+
+    [입력 데이터 형식]
+    {
+      "player_vs_enemy_to_calculate": [ { "attacker": "...", "defender": "..." }, ... ],
+      "enemy_vs_player_to_calculate": [ { "attacker": "...", "defender": "..." }, ... ]
+    }
+
+    [출력 형식]
+    {
+      "player_vs_enemy": [ { "attacker": "...", "defender": "...", "multiplier": 1.25 }, ... ],
+      "enemy_vs_player": [ { "attacker": "...", "defender": "...", "multiplier": 1.00 }, ... ]
+    }
+{
+  "player_vs_enemy_to_calculate": [
+    { "attacker": "신성 폭발", "defender": "불멸의 리치" },
+    { "attacker": "신성 폭발", "defender": "슬라임 덩어리" },
+    { "attacker": "신성 폭발", "defender": "수정 골렘" },
+    { "attacker": "신성 폭발", "defender": "화염 정령" },
+    { "attacker": "신성 폭발", "defender": "심연의 악마" },
+    { "attacker": "신성 폭발", "defender": "고대 수호자" },
+    { "attacker": "신성 폭발", "defender": "유령 늑대" },
+    { "attacker": "신성 폭발", "defender": "요정 여왕" },
+    { "attacker": "신성 폭발", "defender": "태양의 기사" },
+    { "attacker": "천벌", "defender": "불멸의 리치" },
+    { "attacker": "천벌", "defender": "슬라임 덩어리" },
+    { "attacker": "천벌", "defender": "수정 골렘" },
+    { "attacker": "천벌", "defender": "화염 정령" },
+    { "attacker": "천벌", "defender": "심연의 악마" },
+    { "attacker": "천벌", "defender": "고대 수호자" },
+    { "attacker": "천벌", "defender": "유령 늑대" },
+    { "attacker": "천벌", "defender": "요정 여왕" },
+    { "attacker": "천벌", "defender": "태양의 기사" },
+    { "attacker": "빛의 창", "defender": "불멸의 리치" },
+    { "attacker": "빛의 창", "defender": "슬라임 덩어리" },
+    { "attacker": "빛의 창", "defender": "수정 골렘" },
+    { "attacker": "빛의 창", "defender": "화염 정령" },
+    { "attacker": "빛의 창", "defender": "심연의 악마" },
+    { "attacker": "빛의 창", "defender": "고대 수호자" },
+    { "attacker": "빛의 창", "defender": "유령 늑대" },
+    { "attacker": "빛의 창", "defender": "요정 여왕" },
+    { "attacker": "빛의 창", "defender": "태양의 기사" },
+    { "attacker": "공허의 촉수", "defender": "불멸의 리치" },
+    { "attacker": "공허의 촉수", "defender": "슬라임 덩어리" },
+    { "attacker": "공허의 촉수", "defender": "수정 골렘" },
+    { "attacker": "공허의 촉수", "defender": "화염 정령" },
+    { "attacker": "공허의 촉수", "defender": "심연의 악마" },
+    { "attacker": "공허의 촉수", "defender": "고대 수호자" },
+    { "attacker": "공허의 촉수", "defender": "유령 늑대" },
+    { "attacker": "공허의 촉수", "defender": "요정 여왕" },
+    { "attacker": "공허의 촉수", "defender": "태양의 기사" },
+    { "attacker": "그림자 흡수", "defender": "불멸의 리치" },
+    { "attacker": "그림자 흡수", "defender": "슬라임 덩어리" },
+    { "attacker": "그림자 흡수", "defender": "수정 골렘" },
+    { "attacker": "그림자 흡수", "defender": "화염 정령" },
+    { "attacker": "그림자 흡수", "defender": "심연의 악마" },
+    { "attacker": "그림자 흡수", "defender": "고대 수호자" },
+    { "attacker": "그림자 흡수", "defender": "유령 늑대" },
+    { "attacker": "그림자 흡수", "defender": "요정 여왕" },
+    { "attacker": "그림자 흡수", "defender": "태양의 기사" },
+    { "attacker": "혼돈의 화살", "defender": "불멸의 리치" },
+    { "attacker": "혼돈의 화살", "defender": "슬라임 덩어리" },
+    { "attacker": "혼돈의 화살", "defender": "수정 골렘" },
+    { "attacker": "혼돈의 화살", "defender": "화염 정령" },
+    { "attacker": "혼돈의 화살", "defender": "심연의 악마" },
+    { "attacker": "혼돈의 화살", "defender": "고대 수호자" },
+    { "attacker": "혼돈의 화살", "defender": "유령 늑대" },
+    { "attacker": "혼돈의 화살", "defender": "요정 여왕" },
+    { "attacker": "혼돈의 화살", "defender": "태양의 기사" },
+    { "attacker": "지각 변동", "defender": "불멸의 리치" },
+    { "attacker": "지각 변동", "defender": "슬라임 덩어리" },
+    { "attacker": "지각 변동", "defender": "수정 골렘" },
+    { "attacker": "지각 변동", "defender": "화염 정령" },
+    { "attacker": "지각 변동", "defender": "심연의 악마" },
+    { "attacker": "지각 변동", "defender": "고대 수호자" },
+    { "attacker": "지각 변동", "defender": "유령 늑대" },
+    { "attacker": "지각 변동", "defender": "요정 여왕" },
+    { "attacker": "지각 변동", "defender": "태양의 기사" },
+    { "attacker": "결정화", "defender": "불멸의 리치" },
+    { "attacker": "결정화", "defender": "슬라임 덩어리" },
+    { "attacker": "결정화", "defender": "수정 골렘" },
+    { "attacker": "결정화", "defender": "화염 정령" },
+    { "attacker": "결정화", "defender": "심연의 악마" },
+    { "attacker": "결정화", "defender": "고대 수호자" },
+    { "attacker": "결정화", "defender": "유령 늑대" },
+    { "attacker": "결정화", "defender": "요정 여왕" },
+    { "attacker": "결정화", "defender": "태양의 기사" },
+    { "attacker": "산사태", "defender": "불멸의 리치" },
+    { "attacker": "산사태", "defender": "슬라임 덩어리" },
+    { "attacker": "산사태", "defender": "수정 골렘" },
+    { "attacker": "산사태", "defender": "화염 정령" },
+    { "attacker": "산사태", "defender": "심연의 악마" },
+    { "attacker": "산사태", "defender": "고대 수호자" },
+    { "attacker": "산사태", "defender": "유령 늑대" },
+    { "attacker": "산사태", "defender": "요정 여왕" },
+    { "attacker": "산사태", "defender": "태양의 기사" }
+  ],
+  "enemy_vs_player_to_calculate": [
+    { "attacker": "영혼 흡수", "defender": "천상의 화신" },
+    { "attacker": "영혼 흡수", "defender": "공허 방랑자" },
+    { "attacker": "영혼 흡수", "defender": "대지의 거신" },
+    { "attacker": "산성액 분출", "defender": "천상의 화신" },
+    { "attacker": "산성액 분출", "defender": "공허 방랑자" },
+    { "attacker": "산성액 분출", "defender": "대지의 거신" },
+    { "attacker": "수정 가시", "defender": "천상의 화신" },
+    { "attacker": "수정 가시", "defender": "공허 방랑자" },
+    { "attacker": "수정 가시", "defender": "대지의 거신" },
+    { "attacker": "지옥불", "defender": "천상의 화신" },
+    { "attacker": "지옥불", "defender": "공허 방랑자" },
+    { "attacker": "지옥불", "defender": "대지의 거신" },
+    { "attacker": "유령 물기", "defender": "천상의 화신" },
+    { "attacker": "유령 물기", "defender": "공허 방랑자" },
+    { "attacker": "유령 물기", "defender": "대지의 거신" },
+    { "attacker": "환영", "defender": "천상의 화신" },
+    { "attacker": "환영", "defender": "공허 방랑자" },
+    { "attacker": "환영", "defender": "대지의 거신" },
+    { "attacker": "태양 베기", "defender": "천상의 화신" },
+    { "attacker": "태양 베기", "defender": "공허 방랑자" },
+    { "attacker": "태양 베기", "defender": "대지의 거신" },
+    { "attacker": "룬 폭발", "defender": "천상의 화신" },
+    { "attacker": "룬 폭발", "defender": "공허 방랑자" },
+    { "attacker": "룬 폭발", "defender": "대지의 거신" }
+  ]
+}

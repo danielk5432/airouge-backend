@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Rouge Run 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Noto Sans KR', sans-serif; } </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-teal-400">AI-Rouge Run 테스트</h1>
+
+        <!-- 1. 캐릭터 선택 섹션 -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8">
+            <h2 class="text-xl font-semibold mb-4">1. 플레이어 캐릭터 선택 (3명)</h2>
+            <div id="characterSelectionList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <!-- 불러온 캐릭터들이 여기에 표시됩니다. -->
+            </div>
+            <button id="startRunBtn" class="mt-6 w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>
+                게임 시작 (3명 선택 필요)
+            </button>
+        </div>
+
+        <!-- 2. 게임 정보 표시 섹션 -->
+        <div id="runInfoSection" class="bg-gray-800 p-6 rounded-lg mb-8 hidden">
+            <h2 class="text-xl font-semibold mb-4">2. 생성된 게임 정보</h2>
+            <div><strong>Run ID:</strong> <span id="runIdDisplay" class="font-mono text-yellow-300"></span></div>
+            <h3 class="text-lg font-semibold mt-4 mb-2">적 목록 (9명)</h3>
+            <div id="enemyList" class="text-sm space-y-1"></div>
+        </div>
+
+        <!-- 3. 라운드 데이터 조회 섹션 -->
+        <div id="floorTestSection" class="bg-gray-800 p-6 rounded-lg hidden">
+            <h2 class="text-xl font-semibold mb-4">3. 라운드(층) 데이터 조회</h2>
+            <div class="flex items-center space-x-4">
+                <input type="number" id="floorNumberInput" min="1" max="9" value="1" class="w-24 bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-teal-500">
+                <button id="getFloorDataBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                    해당 층 데이터 조회
+                </button>
+            </div>
+            <h3 class="text-lg font-semibold mt-6 mb-2">조회 결과:</h3>
+            <pre id="floorDataResult" class="w-full bg-gray-900 p-4 rounded-lg text-sm text-green-300 overflow-x-auto h-96 border border-gray-700"></pre>
+        </div>
+    </div>
+
+    <script>
+        // 전역 변수
+        let allCharacters = [];
+        let selectedCharacters = new Map();
+        let currentRunId = null;
+
+        // HTML 요소
+        const selectionList = document.getElementById('characterSelectionList');
+        const startRunBtn = document.getElementById('startRunBtn');
+        const runInfoSection = document.getElementById('runInfoSection');
+        const runIdDisplay = document.getElementById('runIdDisplay');
+        const enemyList = document.getElementById('enemyList');
+        const floorTestSection = document.getElementById('floorTestSection');
+        const floorNumberInput = document.getElementById('floorNumberInput');
+        const getFloorDataBtn = document.getElementById('getFloorDataBtn');
+        const floorDataResult = document.getElementById('floorDataResult');
+
+        // 1. 캐릭터 선택 목록 불러오기
+        async function fetchCharactersForSelection() {
+            try {
+                const response = await fetch('/api/admin/characters');
+                allCharacters = await response.json();
+                renderSelectionList();
+            } catch (error) {
+                selectionList.innerHTML = `<p class="text-red-400 col-span-full">캐릭터 목록을 불러오는 데 실패했습니다.</p>`;
+            }
+        }
+
+        function renderSelectionList() {
+            selectionList.innerHTML = '';
+            allCharacters.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'bg-gray-700 p-2 rounded-lg text-center cursor-pointer border-2 border-transparent';
+                card.innerHTML = `
+                    <img src="${char.image_url || 'https://placehold.co/256x256/1f2937/7c3aed?text=No+Image'}" class="w-full h-32 object-cover rounded-md mb-2">
+                    <p class="text-xs font-semibold">${char.character_name}</p>
+                `;
+                card.addEventListener('click', () => toggleSelection(card, char));
+                selectionList.appendChild(card);
+            });
+        }
+
+        function toggleSelection(cardElement, character) {
+            if (selectedCharacters.has(character.id)) {
+                selectedCharacters.delete(character.id);
+                cardElement.classList.remove('border-teal-400');
+            } else {
+                if (selectedCharacters.size < 3) {
+                    selectedCharacters.set(character.id, character);
+                    cardElement.classList.add('border-teal-400');
+                } else {
+                    alert('캐릭터는 3명까지만 선택할 수 있습니다.');
+                }
+            }
+            updateStartButton();
+        }
+
+        function updateStartButton() {
+            if (selectedCharacters.size === 3) {
+                startRunBtn.disabled = false;
+                startRunBtn.textContent = '게임 시작!';
+            } else {
+                startRunBtn.disabled = true;
+                startRunBtn.textContent = `게임 시작 (${selectedCharacters.size}/3명 선택)`;
+            }
+        }
+
+        // 2. 새 게임 시작
+        startRunBtn.addEventListener('click', async () => {
+            startRunBtn.disabled = true;
+            startRunBtn.textContent = '게임 생성 중...';
+
+            const payload = {
+                player_characters: Array.from(selectedCharacters.values())
+            };
+
+            try {
+                const response = await fetch('/api/runs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || '게임 생성 실패');
+
+                currentRunId = data.run_id;
+                runIdDisplay.textContent = currentRunId;
+                enemyList.innerHTML = data.enemies.map((enemy, i) => `<p>${i + 1}층: ${enemy.character_name}</p>`).join('');
+                
+                runInfoSection.classList.remove('hidden');
+                floorTestSection.classList.remove('hidden');
+                floorDataResult.textContent = '게임을 시작했습니다. 층 데이터를 조회하세요.';
+
+            } catch (error) {
+                alert(`오류: ${error.message}`);
+            } finally {
+                startRunBtn.textContent = '게임 시작 완료';
+            }
+        });
+
+        // 3. 층 데이터 조회
+        getFloorDataBtn.addEventListener('click', async () => {
+            if (!currentRunId) return;
+
+            const floor = floorNumberInput.value;
+            getFloorDataBtn.disabled = true;
+            getFloorDataBtn.textContent = '조회 중...';
+            floorDataResult.textContent = `${floor}층 데이터를 요청하는 중...`;
+
+            try {
+                const response = await fetch(`/api/runs/${currentRunId}/floors/${floor}`);
+                const data = await response.json();
+
+                if (data.status === 'calculating') {
+                    floorDataResult.textContent = `상성표 계산이 아직 진행 중입니다. 잠시 후 다시 시도해주세요.`;
+                    setTimeout(() => getFloorDataBtn.click(), 2000); // 2초 후 자동 재시도
+                    return; // 버튼 비활성화 유지를 위해 여기서 함수 종료
+                }
+                
+                if (!response.ok) throw new Error(data.detail || '데이터 조회 실패');
+
+                floorDataResult.textContent = JSON.stringify(data, null, 2);
+
+            } catch (error) {
+                floorDataResult.textContent = `오류: ${error.message}`;
+            } finally {
+                getFloorDataBtn.disabled = false;
+                getFloorDataBtn.textContent = '해당 층 데이터 조회';
+            }
+        });
+
+        // 초기화
+        fetchCharactersForSelection();
+    </script>
+</body>
+</html>

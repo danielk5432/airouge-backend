@@ -1,16 +1,18 @@
 # main.py
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles # StaticFiles 임포트
 import uvicorn
 from pydantic import BaseModel
-from services.gemini_service import create_character
+from services.gemini_service import *
+from services.admin_service import *
 import json
 import os
 from services.gemini_service import create_character
 from security.admin_auth import get_current_admin_user
+from models import *
 import secrets
 
 app = FastAPI()
@@ -32,9 +34,6 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-class CharacterCreateRequest(BaseModel):
-    user_prompt: str
-
 @app.post("/api/v1/characters")
 def handle_create_character(request: CharacterCreateRequest):
     character_data = create_character(request.user_prompt)
@@ -44,11 +43,10 @@ def handle_create_character(request: CharacterCreateRequest):
 
 @app.get("/")
 def read_root():
-    return {"message": "AI-Rouge Backend is running!"}
+    return FileResponse("index.html")
 
 @app.get("/admin")
 def get_admin_page(username: str = Depends(get_current_admin_user)):
-    """관리자 페이지를 반환합니다. (관리자만 접근 가능)"""
     return FileResponse("admin.html")
     
 @app.get("/test")
@@ -59,14 +57,14 @@ if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
 
 
-# --- 디버그용 API 엔드포인트 ---
+# --- admin API endpoint ---
 
-@app.get("/api/characters")
+@app.get("/api/admin/characters")
 def get_characters_list(username: str = Depends(get_current_admin_user)):
     """저장된 모든 캐릭터 목록을 반환합니다."""
     return get_all_characters_from_file()
 
-@app.post("/api/characters")
+@app.post("/api/admin/characters")
 def handle_create_character_and_save(request: CharacterCreateRequest, username: str = Depends(get_current_admin_user)):
     """캐릭터를 생성하고 파일에 저장합니다."""
     # 사용자님의 기존 AI 로직 호출 (수정하지 않음)
@@ -78,7 +76,7 @@ def handle_create_character_and_save(request: CharacterCreateRequest, username: 
     saved_character = save_character_to_file(character_data)
     return saved_character
 
-@app.delete("/api/characters/{character_id}")
+@app.delete("/api/admin/characters/{character_id}")
 def handle_delete_character(character_id: str, username: str = Depends(get_current_admin_user)):
     """ID로 특정 캐릭터를 삭제합니다."""
     success = delete_character_from_file(character_id)
@@ -87,61 +85,127 @@ def handle_delete_character(character_id: str, username: str = Depends(get_curre
     return {"message": "캐릭터가 성공적으로 삭제되었습니다."}
 
 
-# --- 파일 DB 로직 (main.py에 직접 추가) ---
-CHARACTER_FILE = "static/characters.json"
+@app.get("/run-test")
+def get_run_test_page():
+    return FileResponse("run_test.html")
 
-def get_all_characters_from_file():
-    """characters.json 파일에서 모든 캐릭터 목록을 불러옵니다."""
-    try:
-        with open(CHARACTER_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return [] # 파일이 없거나 비어있으면 빈 리스트 반환
+# --- 인메모리 DB: 진행 중인 게임 저장 ---
+runs_db = {} # { "run_id": { "status": "calculating" | "completed", "data": {...} } }
 
-def save_character_to_file(character_data: dict):
-    """새로운 캐릭터 하나를 파일에 추가합니다."""
-    characters = get_all_characters_from_file()
-    characters.append(character_data)
-    with open(CHARACTER_FILE, "w", encoding="utf-8") as f:
-        json.dump(characters, f, ensure_ascii=False, indent=2)
-    return character_data
+# --- 백그라운드 작업 함수 ---
+def calculate_and_save_type_chart_task(run_id: str, player_characters: List[dict], enemies: List[dict]):
+    """
+    (백엔드에서 실행됨) LLM으로 상성표를 계산하고,
+    빠른 조회를 위해 딕셔너리 형태로 변환하여 DB에 저장합니다.
+    """
+    print(f"[{run_id}] 백그라운드 상성표 계산 시작...")
+    # 1. 상성 계산을 위한 모든 고유 타입 수집
+    player_skill_types = {skill['skill_type'] for char in player_characters for skill in char['skills']}
+    enemy_character_types = {enemy['character_type'] for enemy in enemies}
+    enemy_skill_types = {skill['skill_type'] for enemy in enemies for skill in enemy['skills']}
+    player_character_types = {char['character_type'] for char in player_characters}
 
-def delete_character_from_file(character_id: str):
-    """ID를 기준으로 캐릭터를 삭제하고, 연관된 이미지 파일도 삭제합니다."""
-    characters = get_all_characters_from_file()
-    
-    char_to_delete = None
-    # 삭제할 캐릭터를 찾습니다.
-    for char in characters:
-        if char.get('id') == character_id:
-            char_to_delete = char
-            break
-    
-    # 캐릭터를 찾지 못했다면, False를 반환합니다.
-    if not char_to_delete:
-        return False
+    # 2. LLM으로 상성표 계산 (결과는 플랫 리스트 형태)
+    flat_type_chart = calculate_type_chart(
+        list(player_skill_types), list(enemy_character_types),
+        list(enemy_skill_types), list(player_character_types)
+    )
 
-    # --- 이미지 파일 삭제 로직 추가 ---
-    image_url = char_to_delete.get('image_url')
-    if image_url:
-        # URL 경로 (예: /static/images/...)를 실제 파일 시스템 경로 (예: static/images/...)로 변환합니다.
-        # lstrip('/')은 맨 앞의 '/'만 안전하게 제거합니다.
-        image_path = image_url.lstrip('/')
-        if os.path.exists(image_path):
-            try:
-                os.remove(image_path)
-                print(f"이미지 파일 삭제 성공: {image_path}")
-            except OSError as e:
-                print(f"이미지 파일 삭제 실패: {e}")
+    # 3. 계산 완료 후 Run 데이터 업데이트
+    if run_id in runs_db:
+        if flat_type_chart:
+            # --- (신규) 플랫 리스트를 중첩 딕셔너리로 변환 ---
+            nested_chart = { "player_vs_enemy": {}, "enemy_vs_player": {} }
+            for item in flat_type_chart.get('player_vs_enemy', []):
+                attacker = item['attacker']
+                defender = item['defender']
+                if attacker not in nested_chart['player_vs_enemy']:
+                    nested_chart['player_vs_enemy'][attacker] = {}
+                nested_chart['player_vs_enemy'][attacker][defender] = item['multiplier']
+            
+            for item in flat_type_chart.get('enemy_vs_player', []):
+                attacker = item['attacker']
+                defender = item['defender']
+                if attacker not in nested_chart['enemy_vs_player']:
+                    nested_chart['enemy_vs_player'][attacker] = {}
+                nested_chart['enemy_vs_player'][attacker][defender] = item['multiplier']
+            # ----------------------------------------------------
+            
+            runs_db[run_id]["data"]["type_chart"] = nested_chart
+            runs_db[run_id]["status"] = "completed"
+            print(f"[{run_id}] 상성표 계산 완료 및 딕셔너리 변환 성공.")
         else:
-            print(f"삭제할 이미지 파일을 찾을 수 없음: {image_path}")
-    # --------------------------------
+            runs_db[run_id]["status"] = "failed"
+            print(f"[{run_id}] 상성표 계산 실패.")
 
-    # 캐릭터 데이터 리스트에서 해당 캐릭터를 제외합니다.
-    updated_characters = [char for char in characters if char.get('id') != character_id]
+# --- 신규 게임 API 엔드포인트 ---
+
+@app.post("/api/runs")
+def handle_create_run(request: RunCreateRequest, background_tasks: BackgroundTasks):
+    # ... (기존 /api/runs 코드는 변경 없음)
+    run_id = f"run_{uuid.uuid4()}"
+    all_enemies_pool = get_all_characters_from_file()
+    if not all_enemies_pool or len(all_enemies_pool) < 9:
+        raise HTTPException(status_code=500, detail="적이 9명 미만이라 게임을 시작할 수 없습니다. admin 페이지에서 캐릭터를 생성해주세요.")
+    import random
+    enemies = random.sample(all_enemies_pool, 9)
+    player_characters_dict = [char.dict() for char in request.player_characters]
+    runs_db[run_id] = {
+        "status": "calculating",
+        "data": {
+            "player_characters": player_characters_dict,
+            "enemies": enemies,
+            "type_chart": None
+        }
+    }
+    background_tasks.add_task(calculate_and_save_type_chart_task, run_id, player_characters_dict, enemies)
+    return {"run_id": run_id, "enemies": enemies}
+
+@app.get("/api/runs/{run_id}/floors/{floor_number}")
+def get_floor_data(run_id: str, floor_number: int):
+    """
+    특정 층의 정보와 '해당 층에 필요한 상성표'만 필터링하여 반환합니다.
+    """
+    run_session = runs_db.get(run_id)
+    if not run_session:
+        raise HTTPException(status_code=404, detail="해당 Run을 찾을 수 없습니다.")
     
-    # 업데이트된 리스트를 다시 JSON 파일에 씁니다.
-    with open(CHARACTER_FILE, "w", encoding="utf-8") as f:
-        json.dump(updated_characters, f, ensure_ascii=False, indent=2)
+    if run_session["status"] == "calculating":
+        return {"status": "calculating"}
+    if run_session["status"] == "failed":
+        raise HTTPException(status_code=500, detail="상성표 생성에 실패했습니다.")
+
+    run_data = run_session["data"]
+    if not (1 <= floor_number <= 9):
+        raise HTTPException(status_code=400, detail="층 번호는 1에서 9 사이여야 합니다.")
         
-    return True
+    enemy_data = run_data["enemies"][floor_number - 1]
+    master_type_chart = run_data["type_chart"]
+    player_characters = run_data["player_characters"]
+
+    # --- (신규) 이 층에 필요한 상성만 필터링하는 로직 ---
+    floor_specific_chart = { "player_vs_enemy": {}, "enemy_vs_player": {} }
+    
+    # 1. 플레이어 스킬 vs 현재 적 타입
+    enemy_char_type = enemy_data['character_type']
+    for p_char in player_characters:
+        for p_skill in p_char['skills']:
+            p_skill_type = p_skill['skill_type']
+            if p_skill_type in master_type_chart['player_vs_enemy'] and enemy_char_type in master_type_chart['player_vs_enemy'][p_skill_type]:
+                if p_skill_type not in floor_specific_chart['player_vs_enemy']:
+                    floor_specific_chart['player_vs_enemy'][p_skill_type] = {}
+                floor_specific_chart['player_vs_enemy'][p_skill_type][enemy_char_type] = master_type_chart['player_vs_enemy'][p_skill_type][enemy_char_type]
+
+    # 2. 현재 적 스킬 vs 모든 플레이어 타입
+    for e_skill in enemy_data['skills']:
+        e_skill_type = e_skill['skill_type']
+        if e_skill_type in master_type_chart['enemy_vs_player']:
+            for p_char in player_characters:
+                p_char_type = p_char['character_type']
+                if p_char_type in master_type_chart['enemy_vs_player'][e_skill_type]:
+                    if e_skill_type not in floor_specific_chart['enemy_vs_player']:
+                        floor_specific_chart['enemy_vs_player'][e_skill_type] = {}
+                    floor_specific_chart['enemy_vs_player'][e_skill_type][p_char_type] = master_type_chart['enemy_vs_player'][e_skill_type][p_char_type]
+    # ----------------------------------------------------
+
+    return {"status": "completed", "enemy": enemy_data, "type_chart": floor_specific_chart}

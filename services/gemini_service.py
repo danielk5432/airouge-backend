@@ -40,7 +40,7 @@ def get_llm_response(input_text: str):
     try:
         # 요청마다 클라이언트를 새로 만드는 대신, 이미 만들어진 객체를 재사용합니다.
         response = client.models.generate_content(
-            model="models/gemini-2.5-flash-lite", 
+            model="models/gemini-2.5-flash", 
             contents=input_text
         )
         
@@ -129,10 +129,10 @@ def generate_character_image(base_prompt: str) -> str | None:
                 # 처음부터 RGBA 모드로 변환하여 투명도(Alpha) 채널을 다룹니다.
                 img_bg_removed = original_image.convert("RGBA")
                 # 이미지의 네 모서리에서 Flood Fill을 실행하여 배경을 확실히 제거합니다.
-                ImageDraw.floodfill(img_bg_removed, xy=(0, 0), value=(0, 0, 0, 0), thresh=10)
-                ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, 0), value=(0, 0, 0, 0), thresh=10)
-                ImageDraw.floodfill(img_bg_removed, xy=(0, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=10)
-                ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=10)
+                ImageDraw.floodfill(img_bg_removed, xy=(0, 0), value=(0, 0, 0, 0), thresh=20)
+                ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, 0), value=(0, 0, 0, 0), thresh=20)
+                ImageDraw.floodfill(img_bg_removed, xy=(0, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=20)
+                ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=20)
                 # thresh=40 : 완전한 흰색이 아니더라도 비슷한 밝은 색은 함께 제거합니다.
                 # ----------------------------------------------------
 
@@ -148,7 +148,7 @@ def generate_character_image(base_prompt: str) -> str | None:
                 # ----------------------------------------------------
 
                 # --- 3. 64x64 해상도로 작게 픽셀화 ---
-                small_pixelated_image = squared_image.resize((64, 64), Image.Resampling.NEAREST)
+                small_pixelated_image = squared_image.resize((128, 128), Image.Resampling.NEAREST)
                 # ----------------------------------------------------
 
                 # --- 4. 최종 결과물로 256x256 크기 확대 ---
@@ -176,4 +176,41 @@ def generate_character_image(base_prompt: str) -> str | None:
 
     except Exception as e:
         print(f"Gemini 이미지 생성/저장 중 오류 발생: {e}")
+        return None
+
+def calculate_type_chart(player_skill_types, enemy_character_types, enemy_skill_types, player_character_types):
+    """
+    모든 고유 타입 조합에 대한 상성표를 LLM을 통해 계산합니다.
+    """
+    # 백엔드에서 모든 조합을 미리 만들어 플랫 리스트 형태로 LLM에게 전달합니다.
+    player_vs_enemy_pairs = [{"attacker": p_skill, "defender": e_char} for p_skill in player_skill_types for e_char in enemy_character_types]
+    enemy_vs_player_pairs = [{"attacker": e_skill, "defender": p_char} for e_skill in enemy_skill_types for p_char in player_character_types]
+
+    # LLM에게 전달할 최종 입력 데이터 구조
+    input_data = {
+        "player_vs_enemy_to_calculate": player_vs_enemy_pairs,
+        "enemy_vs_player_to_calculate": enemy_vs_player_pairs
+    }
+
+    # 시스템 프롬프트
+    with open('skill_prompt.txt', 'r', encoding='utf-8') as f:
+        system_prompt = f.read()
+    
+    
+    full_prompt = f"{system_prompt}\n\n### [입력 데이터]\n{json.dumps(input_data, ensure_ascii=False, indent=2)}"
+
+    llm_response_str = get_llm_response(full_prompt)
+    if llm_response_str is None:
+        return None
+
+    try:
+        # --- (수정된 부분) ---
+        # LLM이 반환한 JSON 호환 딕셔너리를 그대로 반환합니다.
+        # 튜플을 키로 사용하는 딕셔너리로 변환하지 않습니다.
+        type_chart = json.loads(llm_response_str)
+        return type_chart
+        # --------------------
+
+    except json.JSONDecodeError as e:
+        print(f"상성표 JSON 파싱 오류: {e}")
         return None
