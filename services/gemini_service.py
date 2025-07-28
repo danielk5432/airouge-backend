@@ -1,3 +1,5 @@
+# gemini_service
+
 import os
 import uuid
 import json
@@ -39,7 +41,7 @@ def get_llm_response(input_text: str):
     try:
         # 요청마다 클라이언트를 새로 만드는 대신, 이미 만들어진 객체를 재사용합니다.
         response = client.models.generate_content(
-            model="models/gemini-1.5-flash", 
+            model="models/gemini-2.5-flash-lite", 
             contents=input_text
         )
         
@@ -72,6 +74,8 @@ def create_character(user_description: str):
     # LLM이 반환한 문자열(JSON 형식)을 실제 Python 딕셔너리로 변환
     try:
         character_data = json.loads(llm_response_str)
+
+        character_data['id'] = str(uuid.uuid4())
         
         # 캐릭터 설명이나 이름을 바탕으로 이미지 생성 프롬프트를 만듭니다.
         image_base_prompt = f"{character_data['character_name']}, {character_data['description']}"
