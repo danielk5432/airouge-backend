@@ -4,7 +4,7 @@ import json
 from google import genai
 from dotenv import load_dotenv
 from google.genai import types
-from PIL import Image
+from PIL import Image, ImageDraw
 from io import BytesIO
 import base64
 
@@ -97,7 +97,7 @@ def generate_character_image(base_prompt: str) -> str | None:
         print(f"Gemini API에 이미지 생성 요청: '{base_prompt}'")
 
         # 이미지 생성을 위한 상세 프롬프트 구성
-        full_prompt = f"A full body character portrait of a {base_prompt}, fantasy art style, vibrant colors, detailed, simple background, 1:1 aspect ratio"
+        full_prompt = f"A full body character portrait of a {base_prompt}, fantasy art style, detailed, vibrant colors, white background, 1:1 aspect ratio"
 
         # Gemini 이미지 생성 모델 호출
         response = client.models.generate_content(
@@ -120,13 +120,51 @@ def generate_character_image(base_prompt: str) -> str | None:
                 save_path = os.path.join(save_dir, filename)
 
                 # 3. 이미지 데이터를 파일로 저장
-                image = Image.open(BytesIO(part.inline_data.data))
-                image.save(save_path)
+                original_image = Image.open(BytesIO(part.inline_data.data))
+
+                # --- 1. Flood Fill을 이용한 배경 제거 (가장 먼저 실행) ---
+                # 처음부터 RGBA 모드로 변환하여 투명도(Alpha) 채널을 다룹니다.
+                img_bg_removed = original_image.convert("RGBA")
+                # 이미지의 네 모서리에서 Flood Fill을 실행하여 배경을 확실히 제거합니다.
+                ImageDraw.floodfill(img_bg_removed, xy=(0, 0), value=(0, 0, 0, 0), thresh=10)
+                ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, 0), value=(0, 0, 0, 0), thresh=10)
+                ImageDraw.floodfill(img_bg_removed, xy=(0, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=10)
+                ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=10)
+                # thresh=40 : 완전한 흰색이 아니더라도 비슷한 밝은 색은 함께 제거합니다.
+                # ----------------------------------------------------
+
+                # --- 2. 투명 여백을 추가하여 1:1 비율의 정사각형으로 만들기 ---
+                width, height = img_bg_removed.size
+                longer_side = max(width, height)
+                # 배경을 (0,0,0,0) 즉, '투명'으로 설정한 새 캔버스를 만듭니다.
+                squared_image = Image.new("RGBA", (longer_side, longer_side), (0, 0, 0, 0))
+                paste_position = (int((longer_side - width) / 2), int((longer_side - height) / 2))
+                # 배경이 제거된 이미지를 투명 캔버스 중앙에 붙여넣습니다.
+                # 세 번째 인자로 자기 자신(mask)을 주면 투명도가 올바르게 유지됩니다.
+                squared_image.paste(img_bg_removed, paste_position, img_bg_removed)
+                # ----------------------------------------------------
+
+                # --- 3. 64x64 해상도로 작게 픽셀화 ---
+                small_pixelated_image = squared_image.resize((64, 64), Image.Resampling.NEAREST)
+                # ----------------------------------------------------
+
+                # --- 4. 최종 결과물로 256x256 크기 확대 ---
+                # NEAREST 필터를 사용해야 픽셀 느낌이 깨지지 않고 선명하게 확대됩니다.
+                final_image = small_pixelated_image.resize((256, 256), Image.Resampling.NEAREST)
+                # ----------------------------------------------------
+
+                # 고유한 파일 이름 생성
+                filename = f"image_{uuid.uuid4()}.png"
+                save_dir = "static/images"
+                os.makedirs(save_dir, exist_ok=True)
+                save_path = os.path.join(save_dir, filename)
+
+                # 최종적으로 처리된 이미지를 저장합니다.
+                final_image.save(save_path)
                 
-                print(f"이미지 생성 성공, 저장 경로: {save_path}")
+                print(f"이미지 처리 및 저장 완료: {save_path}")
                 
-                # 4. 웹에서 접근 가능한 URL 경로를 반환합니다.
-                # 예: "/static/images/image_abc-123.png"
+                # 웹에서 접근 가능한 URL 경로를 반환합니다.
                 return f"/{save_path}"
 
         # 루프가 끝날 때까지 이미지를 찾지 못했다면
