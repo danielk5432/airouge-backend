@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles # StaticFiles 임포트
 import uvicorn
 from pydantic import BaseModel
 from services.gemini_service import create_character
@@ -22,6 +23,7 @@ app.add_middleware(
     allow_headers=["*"], # 모든 HTTP 헤더 허용
 )
 
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 class CharacterCreateRequest(BaseModel):
     user_prompt: str
