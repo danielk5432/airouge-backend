@@ -100,7 +100,7 @@ def generate_character_image(base_prompt: str) -> str | None:
         print(f"Gemini API에 이미지 생성 요청: '{base_prompt}'")
 
         # 이미지 생성을 위한 상세 프롬프트 구성
-        full_prompt = f"A full body character portrait of a {base_prompt}, fantasy art style, detailed, vibrant colors, white background, 1:1 aspect ratio"
+        full_prompt = f"A full body character portrait of a {base_prompt}, fantasy art style, detailed, vibrant colors, white background, no text in background, 1:1 aspect ratio"
 
         # Gemini 이미지 생성 모델 호출
         response = client.models.generate_content(

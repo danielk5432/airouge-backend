@@ -1,7 +1,7 @@
 import json
 import os
 
-CHARACTER_FILE = "static/characters.json"
+CHARACTER_FILE = os.getenv("CHARACTER_FILE")
 
 def get_all_characters_from_file():
     """characters.json 파일에서 모든 캐릭터 목록을 불러옵니다."""

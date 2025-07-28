@@ -44,6 +44,15 @@
             <h3 class="text-lg font-semibold mt-6 mb-2">조회 결과:</h3>
             <pre id="floorDataResult" class="w-full bg-gray-900 p-4 rounded-lg text-sm text-green-300 overflow-x-auto h-96 border border-gray-700"></pre>
         </div>
+
+        <!-- 4. 게임 클리어 섹션 (신규) -->
+        <div id="clearRunSection" class="bg-gray-800 p-6 rounded-lg hidden">
+            <h2 class="text-xl font-semibold mb-4">4. 게임 클리어</h2>
+            <p class="text-sm text-gray-400 mb-4">아래 버튼을 누르면 현재 선택된 플레이어 캐릭터 3명이 '명예의 전당'(적 풀)에 저장되고, 이 Run은 종료됩니다.</p>
+            <button id="clearRunBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition">
+                게임 클리어 및 캐릭터 저장
+            </button>
+        </div>
     </div>
 
     <script>
@@ -62,6 +71,8 @@
         const floorNumberInput = document.getElementById('floorNumberInput');
         const getFloorDataBtn = document.getElementById('getFloorDataBtn');
         const floorDataResult = document.getElementById('floorDataResult');
+        const clearRunSection = document.getElementById('clearRunSection'); // 신규
+        const clearRunBtn = document.getElementById('clearRunBtn'); // 신규
 
         // 1. 캐릭터 선택 목록 불러오기
         async function fetchCharactersForSelection() {
@@ -137,6 +148,7 @@
                 
                 runInfoSection.classList.remove('hidden');
                 floorTestSection.classList.remove('hidden');
+                clearRunSection.classList.remove('hidden'); // 클리어 버튼 섹션 보이기
                 floorDataResult.textContent = '게임을 시작했습니다. 층 데이터를 조회하세요.';
 
             } catch (error) {
@@ -174,6 +186,40 @@
             } finally {
                 getFloorDataBtn.disabled = false;
                 getFloorDataBtn.textContent = '해당 층 데이터 조회';
+            }
+        });
+
+        // 4. 게임 클리어 (신규)
+        clearRunBtn.addEventListener('click', async () => {
+            if (!currentRunId || selectedCharacters.size !== 3) {
+                alert('게임이 시작되지 않았거나, 선택된 캐릭터가 3명이 아닙니다.');
+                return;
+            }
+
+            clearRunBtn.disabled = true;
+            clearRunBtn.textContent = '저장 중...';
+
+            const payload = {
+                winning_characters: Array.from(selectedCharacters.values())
+            };
+
+            try {
+                const response = await fetch(`/api/runs/${currentRunId}/complete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || '클리어 처리 실패');
+                
+                alert(data.message);
+                // 성공 시 페이지 리셋
+                window.location.reload();
+
+            } catch (error) {
+                alert(`오류: ${error.message}`);
+                clearRunBtn.disabled = false;
+                clearRunBtn.textContent = '게임 클리어 및 캐릭터 저장';
             }
         });
 

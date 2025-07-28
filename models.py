@@ -31,8 +31,7 @@ class Skill(BaseModel):
 class Stats(BaseModel):
     hp: int
     atk: int
-    # 'def'는 Python 예약어와 겹칠 수 있어 alias를 사용하거나 다른 이름을 쓰는 것이 안전합니다.
-    # 여기서는 그대로 def를 사용하되, 문제가 생기면 def_stat 등으로 변경할 수 있습니다.
+    # C#의 'def' 필드와 매칭시키기 위해 alias를 사용합니다.
     def_stat: int = Field(alias="def")
     sp_atk: int
     sp_def: int
@@ -46,12 +45,13 @@ class ImageUrls(BaseModel):
     attacking: Optional[str] = None
     hit: Optional[str] = None
 
-# --- 최종 캐릭터 데이터 모델 ---
+# --- 최종 캐릭터 데이터 모델 (수정됨) ---
 class CharacterData(BaseModel):
     id: Optional[str] = None
     character_name: str
     description: str
-    image_urls: Optional[ImageUrls] = None # 5종 이미지 세트
+    # 'image_urls' (객체) 대신 'image_url' (문자열)을 받도록 수정했습니다.
+    image_url: Optional[str] = None
     stats: Stats
     character_type: str
     skills: List[Skill]
@@ -62,3 +62,6 @@ class RunCreateRequest(BaseModel):
 
 class CharacterCreateRequest(BaseModel):
     user_prompt: str
+
+class GameCompleteRequest(BaseModel):
+    winning_characters: List[CharacterData]

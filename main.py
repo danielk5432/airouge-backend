@@ -32,6 +32,8 @@ app.add_middleware(
     allow_headers=["*"], # 모든 HTTP 헤더 허용
 )
 
+CHARACTER_FILE = os.getenv("CHARACTER_FILE")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.post("/api/v1/characters")
@@ -209,3 +211,39 @@ def get_floor_data(run_id: str, floor_number: int):
     # ----------------------------------------------------
 
     return {"status": "completed", "enemy": enemy_data, "type_chart": floor_specific_chart}
+
+@app.post("/api/runs/{run_id}/complete")
+def handle_game_complete(run_id: str, request: GameCompleteRequest):
+    """
+    게임 클리어를 처리하고, 우승한 캐릭터 3명을 '적 풀'에 저장한 뒤,
+    진행 중인 Run 데이터를 삭제합니다.
+    """
+    # 1. 우승 캐릭터들을 hall_of_fame.json 파일에 저장합니다.
+    winning_characters_dict = [char.dict() for char in request.winning_characters]
+    save_characters_to_file(winning_characters_dict)
+
+    # 2. 진행이 끝난 Run 데이터를 메모리에서 삭제합니다.
+    if run_id in runs_db:
+        del runs_db[run_id]
+        print(f"[{run_id}] Run completed and removed from memory.")
+        return {"message": "Congratulations! Run complete and characters saved to Hall of Fame."}
+    else:
+        # Run 데이터가 이미 없더라도 캐릭터는 저장되었으므로 성공으로 간주합니다.
+        print(f"[{run_id}] Run not found in memory, but characters were saved.")
+        return {"message": "Run not found, but characters were saved to Hall of Fame."}
+    
+
+# --- 여러 캐릭터를 파일에 저장하는 함수 ---
+def save_characters_to_file(characters_data: List[dict]):
+    """우승한 캐릭터 리스트에 '새로운 ID'를 부여하여 JSON 파일에 추가합니다."""
+    all_chars = get_all_characters_from_file()
+    
+    # 새로 저장할 캐릭터들의 ID를 모두 새로 부여합니다.
+    for char in characters_data:
+        char['id'] = str(uuid.uuid4())
+        
+    all_chars.extend(characters_data)
+    
+    with open(CHARACTER_FILE, "w", encoding="utf-8") as f:
+        json.dump(all_chars, f, ensure_ascii=False, indent=2)
+    return True
