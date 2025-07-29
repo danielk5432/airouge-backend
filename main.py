@@ -40,7 +40,7 @@ async def log_requests(request: Request, call_next):
     html_paths_to_skip_log = ["/", "/run-test", "/test", "/admin"]
 
     # 요청 경로가 위 목록에 있거나 .html로 끝나면 로깅을 건너뜁니다.
-    if request.url.path in html_paths_to_skip_log or request.url.path.endswith(".html") or request.url.path.startswith("/api/admin"):
+    if request.url.path in html_paths_to_skip_log or request.url.path.endswith(".html") or request.url.path.startswith("/api/admin") or request.url.path.startswith("/static"):
         response = await call_next(request)
         return response
 
