@@ -144,7 +144,6 @@ def calculate_and_save_type_chart_task(run_id: str, player_characters: List[dict
 
 @app.post("/api/runs")
 def handle_create_run(request: RunCreateRequest, background_tasks: BackgroundTasks):
-    # ... (기존 /api/runs 코드는 변경 없음)
     run_id = f"run_{uuid.uuid4()}"
     all_enemies_pool = get_all_characters_from_file()
     if not all_enemies_pool or len(all_enemies_pool) < 9:

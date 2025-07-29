@@ -18,3 +18,14 @@ docker run -d -p 8000:80 --name my-game-container --env-file .env my-game-backen
 ```
 
 pip freeze > requirements.txt
+
+sudo docker run \
+    -d \
+    --name airouge-backend-container \
+    -p 8000:8000 \
+    --env-file .env \
+    -v $(pwd):/app \
+    -w /app \
+    --restart always \
+    python:3.12-slim \
+    bash -c "pip install -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
