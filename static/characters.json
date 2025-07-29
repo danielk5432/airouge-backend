@@ -590,7 +590,6 @@
     "id": "07ebe70c-1cfa-4162-9188-e93398078f79"
   },
   {
-    "id": "d2bc3ece-5340-4b78-b007-67669beb2d71",
     "character_name": "커비",
     "description": "별의 용사로, 적을 빨아들여 그 능력을 복사하는 핑크색 둥근 생명체입니다.",
     "image_url": "/static/images/image_69428d42-41a5-45d2-88fd-ebd81cdf6ea0.png",
@@ -660,6 +659,82 @@
         },
         "laser_effect": null
       }
-    ]
+    ],
+    "id": "d2bc3ece-5340-4b78-b007-67669beb2d71"
+  },
+  {
+    "character_name": "이서진",
+    "description": "잠을 자지 않고 밤샘하는 습관을 가진, 기타로 적을 후려치는 불면의 라커.",
+    "image_url": "/static/images/image_a6869a6b-b711-4df9-8ae0-736500df7e82.png",
+    "stats": {
+      "hp": 90,
+      "atk": 120,
+      "def": 70,
+      "sp_atk": 60,
+      "sp_def": 70,
+      "speed": 90
+    },
+    "character_type": "불면의 락스타",
+    "skills": [
+      {
+        "skill_name": "기타 강타",
+        "description": "밤샘으로 다져진 힘으로 기타를 휘둘러 적을 맹렬히 강타합니다.",
+        "base_power": 90,
+        "damage_type": "물리",
+        "skill_type": "파괴적 연주",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#8B4513"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "불면의 멜로디",
+        "description": "잠들지 않는 영혼의 멜로디를 방출하여 적들을 혼란에 빠뜨립니다.",
+        "base_power": 75,
+        "damage_type": "특수",
+        "skill_type": "정신 교란",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "구체",
+          "count": 3,
+          "color": "#9932CC"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "앰프 폭주",
+        "description": "앰프를 최대로 올려 강력한 음파 폭발을 일으켜 적들을 날려버립니다.",
+        "base_power": 100,
+        "damage_type": "특수",
+        "skill_type": "초음파 충격",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "Player",
+          "thickness": 2,
+          "color": "#FF0000"
+        }
+      },
+      {
+        "skill_name": "새벽의 광란 솔로",
+        "description": "밤샘 끝에 도달한 광기의 절정으로 기타 솔로를 연주하여 전방의 적을 가르듯이 공격합니다.",
+        "base_power": 110,
+        "damage_type": "물리",
+        "skill_type": "극한의 연주",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "Player",
+          "thickness": 3,
+          "color": "#FFFF00"
+        }
+      }
+    ],
+    "id": "82f5c34c-3f96-4bf2-b0ac-cfa7648fc968"
   }
 ]
