@@ -590,6 +590,7 @@
     "id": "07ebe70c-1cfa-4162-9188-e93398078f79"
   },
   {
+    "id": "d2bc3ece-5340-4b78-b007-67669beb2d71",
     "character_name": "커비",
     "description": "별의 용사로, 적을 빨아들여 그 능력을 복사하는 핑크색 둥근 생명체입니다.",
     "image_url": "/static/images/image_69428d42-41a5-45d2-88fd-ebd81cdf6ea0.png",
@@ -659,7 +660,6 @@
         },
         "laser_effect": null
       }
-    ],
-    "id": "d2bc3ece-5340-4b78-b007-67669beb2d71"
+    ]
   }
 ]

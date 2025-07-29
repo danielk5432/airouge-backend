@@ -10,6 +10,7 @@
         body { font-family: 'Noto Sans KR', sans-serif; }
         .modal { display: none; }
         .modal.active { display: flex; }
+        textarea { font-family: monospace; }
     </style>
 </head>
 <body class="bg-gray-900 text-white">
@@ -33,17 +34,20 @@
         </div>
     </div>
 
-    <!-- 캐릭터 상세 정보 모달 -->
+    <!-- 캐릭터 상세 정보 모달 (수정됨) -->
     <div id="detailModal" class="modal fixed inset-0 bg-black bg-opacity-75 items-center justify-center p-4">
-        <div class="bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
-            <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white">&times;</button>
+        <div class="bg-gray-800 rounded-lg w-full max-w-2xl max-h-[90vh] p-6 relative flex flex-col">
+            <button id="closeModalBtn" class="absolute top-4 right-4 text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
             <h2 id="modalCharacterName" class="text-2xl font-bold mb-4"></h2>
-            <pre id="modalCharacterDetails" class="bg-gray-900 p-4 rounded text-sm text-green-300"></pre>
+            <!-- pre -> textarea로 변경하여 편집 가능하게 함 -->
+            <textarea id="modalCharacterDetails" class="w-full h-[60vh] bg-gray-900 p-4 rounded text-sm text-green-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            <!-- 저장 버튼 추가 -->
+            <button id="saveChangesBtn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300">변경사항 저장</button>
         </div>
     </div>
 
     <script>
-        const API_URL = '/api/admin/characters';
+        const API_URL = '/api/admin/characters'; // 백엔드 API 주소
         const characterList = document.getElementById('characterList');
         const userPrompt = document.getElementById('userPrompt');
         const createBtn = document.getElementById('createBtn');
@@ -51,11 +55,17 @@
         const closeModalBtn = document.getElementById('closeModalBtn');
         const modalCharacterName = document.getElementById('modalCharacterName');
         const modalCharacterDetails = document.getElementById('modalCharacterDetails');
+        const saveChangesBtn = document.getElementById('saveChangesBtn'); // 저장 버튼
+        let currentEditingCharacterId = null; // 현재 편집 중인 캐릭터 ID 저장
 
         // 캐릭터 목록 불러오기
         async function fetchCharacters() {
             try {
                 const response = await fetch(API_URL);
+                if (response.status === 401) {
+                    alert('인증이 필요합니다. 새로고침 후 다시 로그인해주세요.');
+                    return;
+                }
                 if (!response.ok) throw new Error('서버에서 목록을 불러오지 못했습니다.');
                 const characters = await response.json();
                 renderCharacters(characters);
@@ -76,10 +86,10 @@
                 const card = document.createElement('div');
                 card.className = 'bg-gray-800 rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform duration-300 flex flex-col';
                 card.innerHTML = `
-                    <img src="${char.image_url || 'https://placehold.co/256x256/1f2937/7c3aed?text=No+Image'}" alt="${char.character_name}" class="w-full h-full object-cover">
-                    <div class="p-3">
-                        <h3 class="font-semibold truncate">${char.character_name}</h3>
-                        <button data-id="${char.id}" class="delete-btn mt-2 w-full text-xs bg-red-600 hover:bg-red-700 text-white py-1 rounded">삭제</button>
+                    <img src="${char.image_url || 'https://placehold.co/256x256/1f2937/7c3aed?text=No+Image'}" alt="${char.character_name}" class="w-full h-48 object-cover">
+                    <div class="p-3 flex-grow flex flex-col justify-between">
+                        <h3 class="font-semibold text-sm leading-tight mb-2">${char.character_name}</h3>
+                        <button data-id="${char.id}" class="delete-btn mt-auto w-full text-xs bg-red-600 hover:bg-red-700 text-white py-1 rounded">삭제</button>
                     </div>
                 `;
                 card.addEventListener('click', (e) => {
@@ -135,12 +145,55 @@
             }
         });
         
-        // 상세 정보 보기
+        // 상세 정보 보기 (수정됨)
         function showDetails(character) {
+            currentEditingCharacterId = character.id; // ID 저장
             modalCharacterName.textContent = character.character_name;
-            modalCharacterDetails.textContent = JSON.stringify(character, null, 2);
+            // JSON을 예쁘게 포맷팅해서 textarea에 값으로 설정
+            modalCharacterDetails.value = JSON.stringify(character, null, 2);
             detailModal.classList.add('active');
         }
+
+        // (신규) 변경사항 저장 버튼 이벤트
+        saveChangesBtn.addEventListener('click', async () => {
+            if (!currentEditingCharacterId) return;
+
+            let updatedData;
+            try {
+                // textarea의 텍스트를 다시 JSON 객체로 변환
+                updatedData = JSON.parse(modalCharacterDetails.value);
+            } catch (error) {
+                alert('JSON 형식이 올바르지 않습니다. 수정 후 다시 시도해주세요.\n' + error);
+                return;
+            }
+
+            saveChangesBtn.disabled = true;
+            saveChangesBtn.textContent = '저장 중...';
+
+            try {
+                const response = await fetch(`${API_URL}/${currentEditingCharacterId}`, {
+                    method: 'PUT', // PUT 메소드 사용
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || '캐릭터 업데이트에 실패했습니다.');
+                }
+                
+                alert('성공적으로 저장되었습니다!');
+                detailModal.classList.remove('active');
+                fetchCharacters(); // 목록 새로고침
+
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                saveChangesBtn.disabled = false;
+                saveChangesBtn.textContent = '변경사항 저장';
+                currentEditingCharacterId = null;
+            }
+        });
 
         // 모달 닫기
         closeModalBtn.addEventListener('click', () => {

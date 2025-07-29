@@ -47,7 +47,7 @@ class ImageUrls(BaseModel):
 
 # --- 최종 캐릭터 데이터 모델 (수정됨) ---
 class CharacterData(BaseModel):
-    id: Optional[str] = None
+    id: str
     character_name: str
     description: str
     # 'image_urls' (객체) 대신 'image_url' (문자열)을 받도록 수정했습니다.

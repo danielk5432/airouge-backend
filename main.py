@@ -79,6 +79,14 @@ def handle_create_character_and_save(request: CharacterCreateRequest, username: 
     saved_character = save_character_to_file(character_data)
     return saved_character
 
+@app.put("/api/admin/characters/{character_id}")
+def handle_update_character(character_id: str, updated_char: CharacterData, username: str = Depends(get_current_admin_user)):
+    """ID로 특정 캐릭터의 데이터를 업데이트합니다."""
+    success = update_character_in_file(character_id, updated_char.dict(by_alias=True))
+    if not success:
+        raise HTTPException(status_code=404, detail="해당 ID의 캐릭터를 찾을 수 없습니다.")
+    return {"message": "캐릭터가 성공적으로 업데이트되었습니다."}
+
 @app.delete("/api/admin/characters/{character_id}")
 def handle_delete_character(character_id: str, username: str = Depends(get_current_admin_user)):
     """ID로 특정 캐릭터를 삭제합니다."""
@@ -279,3 +287,24 @@ def calculate_all_floor_charts_task(run_id: str, player_characters: List[dict], 
         else:
             print(f"[{run_id}] {floor_number}층 상성표 계산 실패. 백그라운드 작업을 중단합니다.")
             break # 실패 시 중단
+
+
+def update_character_in_file(character_id: str, updated_char_data: dict):
+    """ID를 기준으로 캐릭터 데이터를 찾아 업데이트합니다."""
+    characters = get_all_characters_from_file()
+    
+    char_found = False
+    for i, char in enumerate(characters):
+        if char.get('id') == character_id:
+            # ID는 유지하고 나머지 데이터만 업데이트합니다.
+            characters[i] = updated_char_data
+            characters[i]['id'] = character_id # ID가 바뀌지 않도록 보장
+            char_found = True
+            break
+    
+    if not char_found:
+        return False
+
+    with open(CHARACTER_FILE, "w", encoding="utf-8") as f:
+        json.dump(characters, f, ensure_ascii=False, indent=2)
+    return True
