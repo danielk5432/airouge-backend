@@ -22,6 +22,8 @@ def get_current_admin_user(credentials: HTTPBasicCredentials = Depends(security)
     env_username = os.getenv("ADMIN_USERNAME")
     env_password = os.getenv("ADMIN_PASSWORD")
 
+    print(f"username: '{env_username}' password: '{env_password}'")
+
     # secrets.compare_digest는 두 인자가 모두 문자열일 때만 작동합니다.
     # 환경 변수가 없을 경우를 대비해 빈 문자열로 처리합니다.
     correct_username = secrets.compare_digest(credentials.username, env_username or "")
