@@ -86,10 +86,10 @@
                 const card = document.createElement('div');
                 card.className = 'bg-gray-800 rounded-lg overflow-hidden cursor-pointer transform hover:scale-105 transition-transform duration-300 flex flex-col';
                 card.innerHTML = `
-                    <img src="${char.image_url || 'https://placehold.co/256x256/1f2937/7c3aed?text=No+Image'}" alt="${char.character_name}" class="w-full h-48 object-cover">
-                    <div class="p-3 flex-grow flex flex-col justify-between">
-                        <h3 class="font-semibold text-sm leading-tight mb-2">${char.character_name}</h3>
-                        <button data-id="${char.id}" class="delete-btn mt-auto w-full text-xs bg-red-600 hover:bg-red-700 text-white py-1 rounded">삭제</button>
+                    <img src="${char.image_url || 'https://placehold.co/256x256/1f2937/7c3aed?text=No+Image'}" alt="${char.character_name}" class="w-full h-full object-cover">
+                    <div class="p-3">
+                        <h3 class="font-semibold truncate">${char.character_name}</h3>
+                        <button data-id="${char.id}" class="delete-btn mt-2 w-full text-xs bg-red-600 hover:bg-red-700 text-white py-1 rounded">삭제</button>
                     </div>
                 `;
                 card.addEventListener('click', (e) => {
