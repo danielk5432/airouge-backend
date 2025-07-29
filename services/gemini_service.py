@@ -129,7 +129,7 @@ def generate_character_image(base_prompt: str) -> str | None:
                 # 처음부터 RGBA 모드로 변환하여 투명도(Alpha) 채널을 다룹니다.
                 img_bg_removed = original_image.convert("RGBA")
                 # 이미지의 네 모서리에서 Flood Fill을 실행하여 배경을 확실히 제거합니다.
-                thresh = 30
+                thresh = 40
                 ImageDraw.floodfill(img_bg_removed, xy=(0, 0), value=(0, 0, 0, 0), thresh=thresh)
                 ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, 0), value=(0, 0, 0, 0), thresh=thresh)
                 ImageDraw.floodfill(img_bg_removed, xy=(0, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=thresh)
