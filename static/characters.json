@@ -1,0 +1,665 @@
+[
+  {
+    "character_name": "수줍은 소녀",
+    "description": "수줍음이 많아 얼굴을 가리는 것을 좋아하는 소녀.",
+    "image_url": "/static/images/image_8197d1f3-0185-4874-ad3c-248138a354f4.png",
+    "stats": {
+      "hp": 80,
+      "atk": 60,
+      "def": 90,
+      "sp_atk": 100,
+      "sp_def": 110,
+      "speed": 60
+    },
+    "character_type": "수줍은 마법사",
+    "skills": [
+      {
+        "skill_name": "얼굴 가리기",
+        "description": "두 손으로 얼굴을 가리며 시선을 회피하여 방어력을 일시적으로 높인다.",
+        "base_power": 0,
+        "damage_type": "특수",
+        "skill_type": "방어 강화",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#E6A8D7"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "수줍은 화염구",
+        "description": "얼굴을 붉히며 작고 강력한 화염구를 발사한다.",
+        "base_power": 85,
+        "damage_type": "특수",
+        "skill_type": "마법 공격",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "구체",
+          "count": 2,
+          "color": "#FF69B4"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "숨어버리기",
+        "description": "순식간에 시야에서 사라져 상대의 공격을 피한다.",
+        "base_power": 0,
+        "damage_type": "특수",
+        "skill_type": "회피",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "BottomToTop",
+          "thickness": 2,
+          "color": "#DDA0DD"
+        }
+      },
+      {
+        "skill_name": "감정 폭발",
+        "description": "참고 있던 감정을 마법 에너지로 방출하여 광범위한 피해를 입힌다.",
+        "base_power": 120,
+        "damage_type": "특수",
+        "skill_type": "광역 마법",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "Player",
+          "thickness": 3,
+          "color": "#C71585"
+        }
+      }
+    ],
+    "id": "d447a697-4998-4848-99c0-16c78bdb3786"
+  },
+  {
+    "character_name": "황광호",
+    "description": "퀀트 투자의 대가이자 경제학 교수, 냉철한 분석으로 시장을 지배하는 인물",
+    "image_url": "/static/images/image_bd802f7f-8ca1-4f6b-a449-774143c52d17.png",
+    "stats": {
+      "hp": 80,
+      "atk": 60,
+      "def": 90,
+      "sp_atk": 130,
+      "sp_def": 100,
+      "speed": 40
+    },
+    "character_type": "퀀트 마스터",
+    "skills": [
+      {
+        "skill_name": "시장 분석",
+        "description": "주가 차트를 분석하여 상대방의 다음 행동을 예측하고 방어력을 무효화합니다.",
+        "base_power": 70,
+        "damage_type": "특수",
+        "skill_type": "정보전",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#00FF00"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "미래 가치 투자",
+        "description": "장기적인 안목으로 미래 가치가 높은 자산을 집중 투자하여 막대한 수익을 창출합니다.",
+        "base_power": 120,
+        "damage_type": "특수",
+        "skill_type": "자산 운용",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "BottomToTop",
+          "thickness": 2,
+          "color": "#FFD700"
+        }
+      },
+      {
+        "skill_name": "알고리즘 트레이딩",
+        "description": "최첨단 알고리즘을 사용하여 빠르고 정확하게 시장의 변동성을 포착하여 이득을 얻습니다.",
+        "base_power": 95,
+        "damage_type": "특수",
+        "skill_type": "자동 매매",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "막대기",
+          "count": 4,
+          "color": "#00FFFF"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "이론적 반박",
+        "description": "경제학 이론을 바탕으로 상대방의 주장을 논리적으로 반박하여 정신적인 타격을 줍니다.",
+        "base_power": 80,
+        "damage_type": "특수",
+        "skill_type": "논리 공격",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#FF0000"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      }
+    ],
+    "id": "522e4adb-8264-4dee-a38a-9a5c48e5eeba"
+  },
+  {
+    "character_name": "성준이 형",
+    "description": "190cm가 넘는 거구의 유도 하얀띠, 그의 분노는 수플렉스로 이어진다.",
+    "image_url": "/static/images/image_ed59ccd1-4cfc-4243-8d5d-2b2109f84ef8.png",
+    "stats": {
+      "hp": 130,
+      "atk": 110,
+      "def": 90,
+      "sp_atk": 50,
+      "sp_def": 70,
+      "speed": 50
+    },
+    "character_type": "거구의 유도인",
+    "skills": [
+      {
+        "skill_name": "압도적인 존재감",
+        "description": "거대한 키와 체격으로 상대를 위압하여 정신력을 약화시킨다.",
+        "base_power": 60,
+        "damage_type": "특수",
+        "skill_type": "심리적 압박",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#A9A9A9"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "하얀 띠의 맹습",
+        "description": "기본적인 유도 기술이지만, 압도적인 힘으로 상대를 찍어누른다.",
+        "base_power": 95,
+        "damage_type": "물리",
+        "skill_type": "육탄 돌파",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "막대기",
+          "count": 4,
+          "color": "#CD5C5C"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "일격 필살 수플렉스",
+        "description": "성준이 형의 심기를 거스르면 날아오는 강력한 수플렉스.",
+        "base_power": 150,
+        "damage_type": "물리",
+        "skill_type": "분노의 일격",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "BottomToTop",
+          "thickness": 3,
+          "color": "#FF4500"
+        }
+      },
+      {
+        "skill_name": "묵직한 방어",
+        "description": "거대한 몸집으로 상대의 공격을 묵직하게 받아낸다.",
+        "base_power": 50,
+        "damage_type": "특수",
+        "skill_type": "견고한 수비",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#8B4513"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      }
+    ],
+    "id": "55f94000-51c2-4f82-b294-85e612298337"
+  },
+  {
+    "character_name": "윤석열",
+    "description": "법과 원칙을 수호하며 강인한 의지로 국가를 이끄는 정의로운 심판자.",
+    "image_url": "/static/images/image_453c5762-5c14-4272-9eb0-9e13d1cf56e8.png",
+    "stats": {
+      "hp": 100,
+      "atk": 80,
+      "def": 90,
+      "sp_atk": 70,
+      "sp_def": 90,
+      "speed": 70
+    },
+    "character_type": "정의의 심판자",
+    "skills": [
+      {
+        "skill_name": "정의의 심판",
+        "description": "법과 원칙에 따라 대상을 엄정하게 심판하며 적에게 강력한 빛의 심판을 내립니다.",
+        "base_power": 90,
+        "damage_type": "특수",
+        "skill_type": "심판",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "TopToBottom",
+          "thickness": 2,
+          "color": "#0000FF"
+        }
+      },
+      {
+        "skill_name": "국정 운영",
+        "description": "흔들림 없는 리더십으로 국가의 기강을 바로잡듯 상대를 압도하며 물리적 충격을 가합니다.",
+        "base_power": 80,
+        "damage_type": "물리",
+        "skill_type": "통솔",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#FFD700"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "자유 수호",
+        "description": "자유 민주주의의 가치를 수호하는 빛을 발사하여 적에게 피해를 줍니다.",
+        "base_power": 95,
+        "damage_type": "특수",
+        "skill_type": "수호",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "구체",
+          "count": 3,
+          "color": "#FFFFFF"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "강골 기질",
+        "description": "타협하지 않는 강인한 의지로 주변에 강력한 충격을 주어 적에게 큰 피해를 입힙니다.",
+        "base_power": 100,
+        "damage_type": "물리",
+        "skill_type": "의지",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#8B0000"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      }
+    ],
+    "id": "b65a9986-7742-4cdc-a032-f1e92a6254b3"
+  },
+  {
+    "character_name": "박재현",
+    "description": "정의로운 개발자이자 슈퍼컴퓨터 6대를 활용하여 디지털 세계의 질서를 수호합니다.",
+    "image_url": "/static/images/image_1c520ee9-717d-4592-bb68-0938c9536508.png",
+    "stats": {
+      "hp": 90,
+      "atk": 10,
+      "def": 80,
+      "sp_atk": 130,
+      "sp_def": 80,
+      "speed": 110
+    },
+    "character_type": "디지털 수호자",
+    "skills": [
+      {
+        "skill_name": "데이터 오버로드",
+        "description": "슈퍼컴퓨터의 방대한 데이터를 적에게 주입하여 시스템 과부하를 일으킵니다.",
+        "base_power": 90,
+        "damage_type": "특수",
+        "skill_type": "데이터 조작",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "구체",
+          "count": 4,
+          "color": "#00FF00"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "방화벽 침투",
+        "description": "적의 방어 시스템에 정교한 디지털 해킹을 가하여 일시적으로 무력화시킵니다.",
+        "base_power": 70,
+        "damage_type": "특수",
+        "skill_type": "방어 해킹",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "Player",
+          "thickness": 2,
+          "color": "#FF0000"
+        }
+      },
+      {
+        "skill_name": "양자 논리 폭탄",
+        "description": "6대의 슈퍼컴퓨터가 연동되어 엄청난 연산력으로 양자 에너지를 압축하여 폭발시킵니다.",
+        "base_power": 120,
+        "damage_type": "특수",
+        "skill_type": "연산 폭주",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#00FFFF"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "뉴럴 네트워크 교란",
+        "description": "적의 인공 신경망에 혼란스러운 신호를 주입하여 행동을 마비시키고 취약하게 만듭니다.",
+        "base_power": 80,
+        "damage_type": "특수",
+        "skill_type": "정신 교란",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "막대기",
+          "count": 3,
+          "color": "#800080"
+        },
+        "laser_effect": null
+      }
+    ],
+    "id": "9e9e1eb7-2951-43e8-bd9b-3e839a6e5387"
+  },
+  {
+    "character_name": "핫도그",
+    "description": "길거리 음식의 상징이자 활기찬 에너지를 뿜어내는 핫도그 캐릭터.",
+    "image_url": "/static/images/image_eaeb9360-6747-43d4-8692-e1f268229c29.png",
+    "stats": {
+      "hp": 80,
+      "atk": 90,
+      "def": 75,
+      "sp_atk": 85,
+      "sp_def": 75,
+      "speed": 95
+    },
+    "character_type": "활기찬 간식",
+    "skills": [
+      {
+        "skill_name": "케찹 발사",
+        "description": "농축된 케찹을 끈적하게 발사하여 적에게 피해를 줍니다.",
+        "base_power": 80,
+        "damage_type": "특수",
+        "skill_type": "양념 투척",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "구체",
+          "count": 3,
+          "color": "#FF0000"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "머스타드 폭격",
+        "description": "머스타드 소스를 공중에서 뿌려 지면에 넓게 폭발적인 피해를 입힙니다.",
+        "base_power": 95,
+        "damage_type": "특수",
+        "skill_type": "향신료 공격",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#FFD700"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "소시지 돌진",
+        "description": "탄력 있는 소시지의 힘으로 적을 향해 빠르게 돌진하여 강력한 물리 피해를 입힙니다.",
+        "base_power": 100,
+        "damage_type": "물리",
+        "skill_type": "육류 돌격",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "Player",
+          "thickness": 2,
+          "color": "#8B4513"
+        }
+      },
+      {
+        "skill_name": "따끈한 빵 방패",
+        "description": "부드럽고 따끈한 빵으로 몸을 감싸 일시적으로 받는 피해를 경감합니다.",
+        "base_power": 0,
+        "damage_type": "보조",
+        "skill_type": "빵 보호막",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#F5DEB3"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      }
+    ],
+    "id": "8e515989-5913-42f0-a7dd-f733733947bc"
+  },
+  {
+    "character_name": "이토 카이지",
+    "description": "빚과 도박에 휘둘리면서도 예리한 통찰력과 불굴의 정신으로 절망적인 상황을 역전시키는 승부사.",
+    "image_url": "/static/images/image_78d3b09c-b060-4760-a266-7993166ac78f.png",
+    "stats": {
+      "hp": 70,
+      "atk": 60,
+      "def": 70,
+      "sp_atk": 80,
+      "sp_def": 120,
+      "speed": 100
+    },
+    "character_type": "파멸의 지략가",
+    "skills": [
+      {
+        "skill_name": "제애 그룹 채무 독촉",
+        "description": "상대방을 정신적으로 압박하여 행동 불능에 가까운 상태로 만듭니다. 낮은 데미지와 함께 적의 행동을 방해할 확률이 있습니다.",
+        "base_power": 70,
+        "damage_type": "특수",
+        "skill_type": "정신공격",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#FF0000"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "묵시록의 역전패",
+        "description": "절망적인 상황에서 모든 것을 걸고 불가능에 가까운 역전을 노리며 강력한 일격을 날립니다. 사용 후 잠시 자신의 능력치가 감소할 수 있습니다.",
+        "base_power": 120,
+        "damage_type": "특수",
+        "skill_type": "최후의 도박",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "Player",
+          "thickness": 2,
+          "color": "#00BFFF"
+        }
+      },
+      {
+        "skill_name": "E카드 승부",
+        "description": "상대방의 심리를 꿰뚫어보아 다음 행동을 예측하고 자신의 회피율을 높이거나 적의 방어력을 약화시킵니다. 미미한 정신 데미지를 입힙니다.",
+        "base_power": 40,
+        "damage_type": "특수",
+        "skill_type": "심리전",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "구체",
+          "count": 1,
+          "color": "#FFD700"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "늪 파훼법",
+        "description": "복잡하고 난해한 상황 속에서 숨겨진 약점을 찾아내어 대상에게 치명적인 돌파구를 마련합니다. 방어력이 높은 적에게 효과적입니다.",
+        "base_power": 95,
+        "damage_type": "특수",
+        "skill_type": "약점간파",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "막대기",
+          "count": 3,
+          "color": "#32CD32"
+        },
+        "laser_effect": null
+      }
+    ],
+    "id": "a454d60a-c732-48ba-b35c-ba407fe74a3b"
+  },
+  {
+    "character_name": "문재인",
+    "description": "국민을 우선시하며 유머와 여유를 잃지 않는 리더십을 지닌 캐릭터.",
+    "image_url": "/static/images/image_e97c44df-d144-484e-b2d9-a8371acddff1.png",
+    "stats": {
+      "hp": 90,
+      "atk": 60,
+      "def": 95,
+      "sp_atk": 100,
+      "sp_def": 95,
+      "speed": 60
+    },
+    "character_type": "민생지도자",
+    "skills": [
+      {
+        "skill_name": "훠훠 미소",
+        "description": "온화한 미소로 상대방의 경계심을 허물고 혼란에 빠뜨립니다.",
+        "base_power": 70,
+        "damage_type": "특수",
+        "skill_type": "심리교란",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#FFFF00"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "짜장면의 소망",
+        "description": "소박한 소망을 들어주는 듯한 따뜻한 언변으로 대상에게 평온함을 주입하여 행동을 둔화시킵니다.",
+        "base_power": 80,
+        "damage_type": "특수",
+        "skill_type": "평화유도",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "구체",
+          "count": 3,
+          "color": "#A020F0"
+        },
+        "laser_effect": null
+      },
+      {
+        "skill_name": "사람이 먼저다 선언",
+        "description": "모든 존재의 기본적인 권리를 주장하며 정의로운 빛을 발산하여 적에게 강력한 정신적 타격을 입힙니다.",
+        "base_power": 100,
+        "damage_type": "특수",
+        "skill_type": "정의수호",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "BottomToTop",
+          "thickness": 2,
+          "color": "#00FF00"
+        }
+      },
+      {
+        "skill_name": "화합의 국면",
+        "description": "주변에 긍정적인 기운을 불어넣어 아군 전체의 사기를 진작시키고, 이로 인해 발생한 파동으로 적들에게 피해를 입힙니다.",
+        "base_power": 90,
+        "damage_type": "특수",
+        "skill_type": "국가영향력",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#00BFFF"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      }
+    ],
+    "id": "07ebe70c-1cfa-4162-9188-e93398078f79"
+  },
+  {
+    "character_name": "커비",
+    "description": "별의 용사로, 적을 빨아들여 그 능력을 복사하는 핑크색 둥근 생명체입니다.",
+    "image_url": "/static/images/image_69428d42-41a5-45d2-88fd-ebd81cdf6ea0.png",
+    "stats": {
+      "hp": 110,
+      "atk": 75,
+      "def": 70,
+      "sp_atk": 90,
+      "sp_def": 70,
+      "speed": 60
+    },
+    "character_type": "별의 용사",
+    "skills": [
+      {
+        "skill_name": "흡입",
+        "description": "적을 빨아들여 삼키거나 별 모양 탄으로 뱉어 공격합니다.",
+        "base_power": 60,
+        "damage_type": "물리",
+        "skill_type": "흡수",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#FFC0CB"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "해머 스윙",
+        "description": "커다란 망치를 소환하여 지면을 강타해 충격파를 발생시킵니다.",
+        "base_power": 100,
+        "damage_type": "물리",
+        "skill_type": "근접 파괴",
+        "visual_effect_type": "Shake",
+        "shake_effect": {
+          "particle_color": "#A0522D"
+        },
+        "projectile_effect": null,
+        "laser_effect": null
+      },
+      {
+        "skill_name": "파이어 브레스",
+        "description": "입에서 뜨거운 불꽃을 연속으로 내뿜어 전방의 적들을 불태웁니다.",
+        "base_power": 95,
+        "damage_type": "특수",
+        "skill_type": "화염 방사",
+        "visual_effect_type": "Laser",
+        "shake_effect": null,
+        "projectile_effect": null,
+        "laser_effect": {
+          "origin": "Player",
+          "thickness": 2,
+          "color": "#FF4500"
+        }
+      },
+      {
+        "skill_name": "별똥별 발사",
+        "description": "하늘에서 여러 개의 작은 별똥별을 소환하여 적들에게 쏟아붓습니다.",
+        "base_power": 115,
+        "damage_type": "특수",
+        "skill_type": "천체 마법",
+        "visual_effect_type": "Projectile",
+        "shake_effect": null,
+        "projectile_effect": {
+          "shape": "구체",
+          "count": 4,
+          "color": "#FFFF00"
+        },
+        "laser_effect": null
+      }
+    ],
+    "id": "d2bc3ece-5340-4b78-b007-67669beb2d71"
+  }
+]
