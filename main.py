@@ -1,9 +1,9 @@
 # main.py
 
 from math import floor
-from fastapi import Depends, FastAPI, HTTPException, BackgroundTasks
+from fastapi import Depends, FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles # StaticFiles 임포트
 import uvicorn
 from pydantic import BaseModel
@@ -11,12 +11,63 @@ from services.gemini_service import *
 from services.admin_service import *
 import json
 import os
-from services.gemini_service import create_character
 from security.admin_auth import get_current_admin_user
 from models import *
 import secrets
+import logging # 로깅 모듈 임포트
+from logging.handlers import RotatingFileHandler # 로그 파일 관리를 위해 임포트
 
 app = FastAPI()
+
+# --- 로거(Logger) 설정 ---
+# 로그 파일 이름 설정
+log_file = "app.log"
+# 로거 인스턴스 생성
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# 로그 포맷 설정 (시간, 로그 레벨, 메시지)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+# 로그 핸들러 설정 (파일 크기가 10MB가 되면 새 파일로 교체, 최대 5개 파일 유지)
+handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
+handler.setFormatter(formatter)
+logger.addHandler(handler)
+# -------------------------
+
+# --- 로깅 미들웨어 (수정됨) ---
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    # 로그를 기록하지 않을 HTML 페이지 경로 목록
+    html_paths_to_skip_log = ["/", "/run-test", "/test", "/admin"]
+
+    # 요청 경로가 위 목록에 있거나 .html로 끝나면 로깅을 건너뜁니다.
+    if request.url.path in html_paths_to_skip_log or request.url.path.endswith(".html") or request.url.path.startswith("/api/admin"):
+        response = await call_next(request)
+        return response
+
+    # API 요청에 대해서만 로그를 기록합니다.
+    logger.info(f"요청 시작: {request.method} {request.url}")
+    body = await request.body()
+    if body:
+        try:
+            logger.info(f"요청 바디: {json.dumps(json.loads(body), ensure_ascii=False, indent=2)}")
+        except json.JSONDecodeError:
+            logger.info(f"요청 바디 (Non-JSON): {body.decode(errors='ignore')}")
+
+    response = await call_next(request)
+
+    response_body = b""
+    async for chunk in response.body_iterator:
+        response_body += chunk
+    
+    logger.info(f"응답 완료: {request.method} {request.url} - 상태 코드: {response.status_code}")
+    if response_body:
+        try:
+            logger.info(f"응답 바디: {json.dumps(json.loads(response_body), ensure_ascii=False, indent=2)}")
+        except json.JSONDecodeError:
+            logger.info(f"응답 바디 (Non-JSON): {response_body.decode(errors='ignore')}")
+
+    return Response(content=response_body, status_code=response.status_code, headers=dict(response.headers))
+# -------------------------
 
 # CORS 미들웨어 설정
 # 웹 브라우저에서 실행되는 test.html이 API 서버에 요청을 보낼 수 있도록 허용합니다.
