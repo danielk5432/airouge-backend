@@ -1,5 +1,6 @@
 # main.py
 
+from math import floor
 from fastapi import Depends, FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -93,132 +94,66 @@ def get_run_test_page():
 
 # --- 인메모리 DB: 진행 중인 게임 저장 ---
 runs_db = {} # { "run_id": { "status": "calculating" | "completed", "data": {...} } }
-
-# --- 백그라운드 작업 함수 ---
-def calculate_and_save_type_chart_task(run_id: str, player_characters: List[dict], enemies: List[dict]):
-    """
-    (백엔드에서 실행됨) LLM으로 상성표를 계산하고,
-    빠른 조회를 위해 딕셔너리 형태로 변환하여 DB에 저장합니다.
-    """
-    print(f"[{run_id}] 백그라운드 상성표 계산 시작...")
-    # 1. 상성 계산을 위한 모든 고유 타입 수집
-    player_skill_types = {skill['skill_type'] for char in player_characters for skill in char['skills']}
-    enemy_character_types = {enemy['character_type'] for enemy in enemies}
-    enemy_skill_types = {skill['skill_type'] for enemy in enemies for skill in enemy['skills']}
-    player_character_types = {char['character_type'] for char in player_characters}
-
-    # 2. LLM으로 상성표 계산 (결과는 플랫 리스트 형태)
-    flat_type_chart = calculate_type_chart(
-        list(player_skill_types), list(enemy_character_types),
-        list(enemy_skill_types), list(player_character_types)
-    )
-
-    # 3. 계산 완료 후 Run 데이터 업데이트
-    if run_id in runs_db:
-        if flat_type_chart:
-            # --- (신규) 플랫 리스트를 중첩 딕셔너리로 변환 ---
-            nested_chart = { "player_vs_enemy": {}, "enemy_vs_player": {} }
-            for item in flat_type_chart.get('player_vs_enemy', []):
-                attacker = item['attacker']
-                defender = item['defender']
-                if attacker not in nested_chart['player_vs_enemy']:
-                    nested_chart['player_vs_enemy'][attacker] = {}
-                nested_chart['player_vs_enemy'][attacker][defender] = item['multiplier']
-            
-            for item in flat_type_chart.get('enemy_vs_player', []):
-                attacker = item['attacker']
-                defender = item['defender']
-                if attacker not in nested_chart['enemy_vs_player']:
-                    nested_chart['enemy_vs_player'][attacker] = {}
-                nested_chart['enemy_vs_player'][attacker][defender] = item['multiplier']
-            # ----------------------------------------------------
-            
-            runs_db[run_id]["data"]["type_chart"] = nested_chart
-            runs_db[run_id]["status"] = "completed"
-            print(f"[{run_id}] 상성표 계산 완료 및 딕셔너리 변환 성공.")
-        else:
-            runs_db[run_id]["status"] = "failed"
-            print(f"[{run_id}] 상성표 계산 실패.")
-
 # --- 신규 게임 API 엔드포인트 ---
 
 @app.post("/api/runs")
 def handle_create_run(request: RunCreateRequest, background_tasks: BackgroundTasks):
     """
-    새로운 게임(Run)을 시작합니다. 1층 상성표는 즉시 계산하고,
-    2-9층은 백그라운드에서 계산하며, 1층 데이터와 함께 즉시 반환합니다.
+    새로운 게임(Run)을 시작합니다. 적 목록을 즉시 반환하고,
+    상성표 계산은 백그라운드에서 순차적으로 처리합니다.
     """
     run_id = f"run_{uuid.uuid4()}"
     
-    # 1. 적 9명 생성
     all_enemies_pool = get_all_characters_from_file()
     if not all_enemies_pool or len(all_enemies_pool) < 9:
         raise HTTPException(status_code=500, detail="적이 9명 미만이라 게임을 시작할 수 없습니다. admin 페이지에서 캐릭터를 생성해주세요.")
+    
     import random
     enemies = random.sample(all_enemies_pool, 9)
     player_characters_dict = [char.dict(by_alias=True) for char in request.player_characters]
 
-    # 2. (즉시 실행) 1층 상성표 계산
-    print(f"[{run_id}] 1층 상성표 즉시 계산 시작...")
-    first_enemy = enemies[0]
-    player_skill_types_f1 = {skill['skill_type'] for char in player_characters_dict for skill in char['skills']}
-    enemy_character_types_f1 = {first_enemy['character_type']}
-    enemy_skill_types_f1 = {skill['skill_type'] for skill in first_enemy['skills']}
-    player_character_types_f1 = {char['character_type'] for char in player_characters_dict}
-
-    type_chart_f1 = calculate_type_chart(
-        list(player_skill_types_f1), list(enemy_character_types_f1),
-        list(enemy_skill_types_f1), list(player_character_types_f1)
-    )
-    if not type_chart_f1:
-        raise HTTPException(status_code=500, detail="LLM 1층 상성표 생성에 실패했습니다.")
-    print(f"[{run_id}] 1층 상성표 계산 완료.")
-
-    # 3. Run 데이터 초기 상태로 저장
+    # Run 데이터 초기 상태로 저장
     runs_db[run_id] = {
         "data": {
             "player_characters": player_characters_dict,
             "enemies": enemies,
-            "type_charts": {
-                "1": type_chart_f1 # 1층 상성표는 이미 계산됨
-            }
+            "type_charts": {} # 비어있는 딕셔너리로 시작
         }
     }
 
-    # 4. (백그라운드 실행) 2-9층 상성표 계산 작업 시작
-    background_tasks.add_task(calculate_remaining_charts_task, run_id, player_characters_dict, enemies)
+    # 백그라운드에서 전체 상성표 계산 작업 시작
+    background_tasks.add_task(calculate_all_floor_charts_task, run_id, player_characters_dict, enemies)
     
-    # 5. 1층 데이터가 포함된 초기 정보를 즉시 반환
-    return {
-        "run_id": run_id, 
-        "enemies": enemies,
-        "initial_floor_data": {
-            "enemy": first_enemy,
-            "type_chart": type_chart_f1
-        }
-    }
+    # 적 목록과 run_id를 즉시 반환
+    print(f"[{run_id}] 게임 시작. 적 목록 즉시 반환. 상성표는 백그라운드에서 계산 중.")
+    return {"run_id": run_id, "enemies": enemies}
 
 @app.get("/api/runs/{run_id}/floors/{floor_number}")
 def get_floor_data(run_id: str, floor_number: int):
     """
     특정 층의 정보와 상성표를 반환합니다.
-    상성표가 아직 계산 중이면 'calculating' 상태를 반환합니다.
+    해당 층의 상성표가 아직 계산 중이면 'calculating' 상태를 반환합니다.
     """
     run_session = runs_db.get(run_id)
     if not run_session:
-        raise HTTPException(status_code=4404, detail="해당 Run을 찾을 수 없습니다.")
+        raise HTTPException(status_code=404, detail="해당 Run을 찾을 수 없습니다.")
     
-    if not (1 <= floor_number <= 9):
-        raise HTTPException(status_code=400, detail="층 번호는 1에서 9 사이여야 합니다.")
-    
-    # 해당 층의 상성표가 계산되었는지 확인
+    # --- (수정된 핵심 로직) ---
+    # 1. 층 번호를 문자열 키로 변환합니다.
     floor_key = str(floor_number)
+    
+    # 2. 해당 층의 상성표가 'type_charts' 딕셔너리 안에 있는지 직접 확인합니다.
     if floor_key not in run_session["data"]["type_charts"]:
         return {"status": "calculating"} # 아직 계산 중
+    # --------------------------------
 
-    # 계산이 완료된 경우
-    enemy_data = run_session["data"]["enemies"][floor_number - 1]
-    type_chart = run_session["data"]["type_charts"][floor_key]
+    run_data = run_session["data"]
+    if not (1 <= floor_number <= 9):
+        raise HTTPException(status_code=400, detail="층 번호는 1에서 9 사이여야 합니다.")
+        
+    enemy_data = run_data["enemies"][floor_number - 1]
+    # 해당 층의 상성표만 정확히 가져옵니다.
+    type_chart = run_data["type_charts"][floor_key]
 
     return {"status": "completed", "enemy": enemy_data, "type_chart": type_chart}
 
@@ -228,7 +163,7 @@ def handle_game_complete(run_id: str, request: GameCompleteRequest):
     게임 클리어를 처리하고, 우승한 캐릭터 3명을 '적 풀'에 저장한 뒤,
     진행 중인 Run 데이터를 삭제합니다.
     """
-    # 1. 우승 캐릭터들을 hall_of_fame.json 파일에 저장합니다.
+    # 1. 우승 캐릭터들을 characters.json 파일에 저장합니다.
     winning_characters_dict = [char.dict() for char in request.winning_characters]
     save_characters_to_file(winning_characters_dict)
 
@@ -258,12 +193,58 @@ def save_characters_to_file(characters_data: List[dict]):
         json.dump(all_chars, f, ensure_ascii=False, indent=2)
     return True
 
-def calculate_remaining_charts_task(run_id: str, player_characters: List[dict], enemies: List[dict]):
+# --- 백그라운드 작업 함수 ---
+def calculate_and_save_type_chart_task(run_id: str, player_characters: List[dict], enemies: List[dict]):
     """
-    (백그라운드에서 실행됨) 2층부터 9층까지의 상성표를 미리 계산합니다.
+    (백그라운드에서 실행됨) LLM으로 상성표를 계산하고,
+    빠른 조회를 위해 딕셔너리 형태로 변환하여 DB에 저장합니다.
     """
-    print(f"[{run_id}] 백그라운드 작업 시작: 2-9층 상성표 계산")
-    for i in range(1, 9): # 2층부터 9층까지 (인덱스 1~8)
+    print(f"[{run_id}] 백그라운드 상성표 계산 시작...")
+    # 1. 상성 계산을 위한 모든 고유 타입 수집
+    player_skill_types = {skill['skill_type'] for char in player_characters for skill in char['skills']}
+    enemy_character_types = {enemy['character_type'] for enemy in enemies}
+    enemy_skill_types = {skill['skill_type'] for enemy in enemies for skill in enemy['skills']}
+    player_character_types = {char['character_type'] for char in player_characters}
+
+    # 2. LLM으로 상성표 계산 (결과는 플랫 리스트 형태)
+    flat_type_chart = calculate_type_chart(
+        list(player_skill_types), list(enemy_character_types),
+        list(enemy_skill_types), list(player_character_types)
+    )
+
+    # 3. 계산 완료 후 Run 데이터 업데이트
+    if run_id in runs_db:
+        if flat_type_chart:
+            # --- (수정) 플랫 리스트를 중첩 딕셔너리로 변환하는 로직 ---
+            nested_chart = { "player_vs_enemy": {}, "enemy_vs_player": {} }
+            for item in flat_type_chart.get('player_vs_enemy', []):
+                attacker = item['attacker']
+                defender = item['defender']
+                if attacker not in nested_chart['player_vs_enemy']:
+                    nested_chart['player_vs_enemy'][attacker] = {}
+                nested_chart['player_vs_enemy'][attacker][defender] = item['multiplier']
+            
+            for item in flat_type_chart.get('enemy_vs_player', []):
+                attacker = item['attacker']
+                defender = item['defender']
+                if attacker not in nested_chart['enemy_vs_player']:
+                    nested_chart['enemy_vs_player'][attacker] = {}
+                nested_chart['enemy_vs_player'][attacker][defender] = item['multiplier']
+            # ----------------------------------------------------
+            
+            runs_db[run_id]["data"]["type_chart"] = nested_chart
+            runs_db[run_id]["status"] = "completed"
+            print(f"[{run_id}] 상성표 계산 완료 및 딕셔너리 변환 성공.")
+        else:
+            runs_db[run_id]["status"] = "failed"
+            print(f"[{run_id}] 상성표 계산 실패.")
+
+def calculate_all_floor_charts_task(run_id: str, player_characters: List[dict], enemies: List[dict]):
+    """
+    (백그라운드에서 실행됨) 1층부터 9층까지의 상성표를 순차적으로 계산합니다.
+    """
+    print(f"[{run_id}] 백그라운드 작업 시작: 1-9층 상성표 순차 계산")
+    for i in range(9): # 1층부터 9층까지 (인덱스 0~8)
         floor_number = i + 1
         enemy = enemies[i]
         
@@ -281,7 +262,20 @@ def calculate_remaining_charts_task(run_id: str, player_characters: List[dict], 
 
         # 계산 완료 후 Run 데이터에 해당 층의 상성표 추가
         if run_id in runs_db and type_chart:
-            runs_db[run_id]["data"]["type_charts"][str(floor_number)] = type_chart
+            # 딕셔너리로 변환하여 저장
+            nested_chart = { "player_vs_enemy": {}, "enemy_vs_player": {} }
+            for item in type_chart.get('player_vs_enemy', []):
+                attacker, defender, multiplier = item['attacker'], item['defender'], item['multiplier']
+                if attacker not in nested_chart['player_vs_enemy']: nested_chart['player_vs_enemy'][attacker] = {}
+                nested_chart['player_vs_enemy'][attacker][defender] = multiplier
+            
+            for item in type_chart.get('enemy_vs_player', []):
+                attacker, defender, multiplier = item['attacker'], item['defender'], item['multiplier']
+                if attacker not in nested_chart['enemy_vs_player']: nested_chart['enemy_vs_player'][attacker] = {}
+                nested_chart['enemy_vs_player'][attacker][defender] = multiplier
+
+            runs_db[run_id]["data"]["type_charts"][str(floor_number)] = nested_chart
             print(f"[{run_id}] {floor_number}층 상성표 계산 완료 및 저장 성공.")
         else:
-            print(f"[{run_id}] {floor_number}층 상성표 계산 실패.")
+            print(f"[{run_id}] {floor_number}층 상성표 계산 실패. 백그라운드 작업을 중단합니다.")
+            break # 실패 시 중단
