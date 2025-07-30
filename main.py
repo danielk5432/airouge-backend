@@ -17,8 +17,6 @@ import secrets
 import logging # 로깅 모듈 임포트
 from logging.handlers import RotatingFileHandler # 로그 파일 관리를 위해 임포트
 
-app = FastAPI()
-
 # --- 로거(Logger) 설정 ---
 log_file = "app.log"
 logger = logging.getLogger(__name__)
@@ -29,6 +27,8 @@ handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 # -------------------------
+
+app = FastAPI()
 
 # --- 로깅 미들웨어 (수정됨) ---
 @app.middleware("http")
