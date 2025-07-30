@@ -128,13 +128,22 @@ def generate_character_image(base_prompt: str) -> str | None:
                 # --- 1. Flood Fill을 이용한 배경 제거 (가장 먼저 실행) ---
                 # 처음부터 RGBA 모드로 변환하여 투명도(Alpha) 채널을 다룹니다.
                 img_bg_removed = original_image.convert("RGBA")
-                # 이미지의 네 모서리에서 Flood Fill을 실행하여 배경을 확실히 제거합니다.
+                width, height = img_bg_removed.size
+                
+                # 이미지의 모든 테두리 픽셀에서 Flood Fill을 실행합니다.
+                # 이렇게 하면 배경이 분리되어 있어도 확실하게 제거할 수 있습니다.
                 thresh = 40
-                ImageDraw.floodfill(img_bg_removed, xy=(0, 0), value=(0, 0, 0, 0), thresh=thresh)
-                ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, 0), value=(0, 0, 0, 0), thresh=thresh)
-                ImageDraw.floodfill(img_bg_removed, xy=(0, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=thresh)
-                ImageDraw.floodfill(img_bg_removed, xy=(img_bg_removed.width - 1, img_bg_removed.height - 1), value=(0, 0, 0, 0), thresh=thresh)
-                # thresh=40 : 완전한 흰색이 아니더라도 비슷한 밝은 색은 함께 제거합니다.
+                for i in range(width):
+                    # 상단 테두리
+                    ImageDraw.floodfill(img_bg_removed, (i, 0), (0, 0, 0, 0), thresh=thresh)
+                    # 하단 테두리
+                    ImageDraw.floodfill(img_bg_removed, (i, height - 1), (0, 0, 0, 0), thresh=thresh)
+                
+                for i in range(height):
+                    # 왼쪽 테두리
+                    ImageDraw.floodfill(img_bg_removed, (0, i), (0, 0, 0, 0), thresh=thresh)
+                    # 오른쪽 테두리
+                    ImageDraw.floodfill(img_bg_removed, (width - 1, i), (0, 0, 0, 0), thresh=thresh)
                 # ----------------------------------------------------
 
                 # --- 2. 투명 여백을 추가하여 1:1 비율의 정사각형으로 만들기 ---
