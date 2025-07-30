@@ -30,14 +30,42 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 # -------------------------
 
-# --- 로깅 미들웨어 ---log_file = "app.log"
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# (수정) 로그 포맷에 '%(asctime)s'를 추가하여 시간을 기록합니다.
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
-handler.setFormatter(formatter)
-logger.addHandler(handler)
+# --- 로깅 미들웨어 (수정됨) ---
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    # 로그를 기록하지 않을 HTML 페이지 경로 목록
+    html_paths_to_skip_log = ["/", "/run-test", "/test", "/admin"]
+
+    # 요청 경로가 위 목록에 있거나 .html로 끝나면 로깅을 건너뜁니다.
+    if request.url.path in html_paths_to_skip_log or request.url.path.endswith(".html") or request.url.path.startswith("/api/admin") or request.url.path.startswith("/static"):
+        response = await call_next(request)
+        return response
+
+    # API 요청에 대해서만 로그를 기록합니다.
+    logger.info(f"요청 시작: {request.method} {request.url}")
+    body = await request.body()
+    if body:
+        try:
+            logger.info(f"요청 바디: {json.dumps(json.loads(body), ensure_ascii=False, indent=2)}")
+        except json.JSONDecodeError:
+            logger.info(f"요청 바디 (Non-JSON): {body.decode(errors='ignore')}")
+
+    response = await call_next(request)
+
+    response_body = b""
+    async for chunk in response.body_iterator:
+        response_body += chunk
+    
+    logger.info(f"응답 완료: {request.method} {request.url} - 상태 코드: {response.status_code}")
+    if response_body:
+        try:
+            logger.info(f"응답 바디: {json.dumps(json.loads(response_body), ensure_ascii=False, indent=2)}")
+        except json.JSONDecodeError:
+            logger.info(f"응답 바디 (Non-JSON): {response_body.decode(errors='ignore')}")
+
+    return Response(content=response_body, status_code=response.status_code, headers=dict(response.headers))
+# -------------------------
+
 # CORS 미들웨어 설정
 # 웹 브라우저에서 실행되는 test.html이 API 서버에 요청을 보낼 수 있도록 허용합니다.
 origins = [
@@ -156,7 +184,7 @@ def handle_create_run(request: RunCreateRequest, background_tasks: BackgroundTas
     # background_tasks.add_task(calculate_all_floor_charts_task, run_id, player_characters_dict, enemies)
     
     # 적 목록과 run_id를 즉시 반환
-    print(f"[{run_id}] 게임 시작. 적 목록 즉시 반환. 상성표는 백그라운드에서 계산 중.")
+    print(f"[{run_id}] 게임 시작. 1층 적 목록 백그라운드에서 진행 중")
     return {"run_id": run_id, "enemies": enemies}
 
 @app.get("/api/runs/{run_id}/floors/{floor_number}")
