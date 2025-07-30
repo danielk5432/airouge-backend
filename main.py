@@ -145,19 +145,22 @@ def handle_create_run(request: RunCreateRequest, background_tasks: BackgroundTas
         "data": {
             "player_characters": player_characters_dict,
             "enemies": enemies,
-            "type_charts": {} # 비어있는 딕셔너리로 시작
+            "type_charts": {}, # 비어있는 딕셔너리로 시작
+            "calculation_triggered": {}
         }
     }
 
+    background_tasks.add_task(calculate_floor_chart, run_id, player_characters_dict, enemies[0], 1)
+
     # 백그라운드에서 전체 상성표 계산 작업 시작
-    background_tasks.add_task(calculate_all_floor_charts_task, run_id, player_characters_dict, enemies)
+    # background_tasks.add_task(calculate_all_floor_charts_task, run_id, player_characters_dict, enemies)
     
     # 적 목록과 run_id를 즉시 반환
     print(f"[{run_id}] 게임 시작. 적 목록 즉시 반환. 상성표는 백그라운드에서 계산 중.")
     return {"run_id": run_id, "enemies": enemies}
 
 @app.get("/api/runs/{run_id}/floors/{floor_number}")
-def get_floor_data(run_id: str, floor_number: int):
+def get_floor_data(run_id: str, floor_number: int, background_tasks: BackgroundTasks):
     """
     특정 층의 정보와 상성표를 반환합니다.
     해당 층의 상성표가 아직 계산 중이면 'calculating' 상태를 반환합니다.
@@ -182,6 +185,9 @@ def get_floor_data(run_id: str, floor_number: int):
     enemy_data = run_data["enemies"][floor_number - 1]
     # 해당 층의 상성표만 정확히 가져옵니다.
     type_chart = run_data["type_charts"][floor_key]
+
+    if floor_number < 9:
+        background_tasks.add_task(calculate_floor_chart, run_id, run_data["player_characters"], run_data["enemies"][floor_number], floor_number+1)
 
     return {"status": "completed", "enemy": enemy_data, "type_chart": type_chart}
 
@@ -308,6 +314,49 @@ def calculate_all_floor_charts_task(run_id: str, player_characters: List[dict], 
             print(f"[{run_id}] {floor_number}층 상성표 계산 실패. 백그라운드 작업을 중단합니다.")
             break # 실패 시 중단
 
+def calculate_floor_chart(run_id: str, player_characters: List[dict], enemy: CharacterData, floor_number: int):
+    """
+    (백그라운드에서 실행됨) 1층부터 9층까지의 상성표를 순차적으로 계산합니다.
+    """
+    if floor_number < 1 or 9 < floor_number:
+        print(f"{floor_number}층은 존재하지 않습니다.")
+        return
+    if floor_number in runs_db[run_id]["data"]["calculation_triggered"]:
+        print(f"{floor_number}층 상성표 계산중..")
+        return
+    runs_db[run_id]["data"]["calculation_triggered"][floor_number] = True
+    print(f"[{run_id}] 백그라운드 작업 시작: {floor_number}층 상성표 계산")
+    
+    # 이 층에 필요한 타입만 수집
+    player_skill_types = {skill['skill_type'] for char in player_characters for skill in char['skills']}
+    enemy_character_types = {enemy['character_type']}
+    enemy_skill_types = {skill['skill_type'] for skill in enemy['skills']}
+    player_character_types = {char['character_type'] for char in player_characters}
+
+    # LLM으로 상성표 계산
+    type_chart = calculate_type_chart(
+        list(player_skill_types), list(enemy_character_types),
+        list(enemy_skill_types), list(player_character_types)
+    )
+
+    # 계산 완료 후 Run 데이터에 해당 층의 상성표 추가
+    if run_id in runs_db and type_chart:
+        # 딕셔너리로 변환하여 저장
+        nested_chart = { "player_vs_enemy": {}, "enemy_vs_player": {} }
+        for item in type_chart.get('player_vs_enemy', []):
+            attacker, defender, multiplier = item['attacker'], item['defender'], item['multiplier']
+            if attacker not in nested_chart['player_vs_enemy']: nested_chart['player_vs_enemy'][attacker] = {}
+            nested_chart['player_vs_enemy'][attacker][defender] = multiplier
+        
+        for item in type_chart.get('enemy_vs_player', []):
+            attacker, defender, multiplier = item['attacker'], item['defender'], item['multiplier']
+            if attacker not in nested_chart['enemy_vs_player']: nested_chart['enemy_vs_player'][attacker] = {}
+            nested_chart['enemy_vs_player'][attacker][defender] = multiplier
+
+        runs_db[run_id]["data"]["type_charts"][str(floor_number)] = nested_chart
+        print(f"[{run_id}] {floor_number}층 상성표 계산 완료 및 저장 성공.")
+    else:
+        print(f"[{run_id}] {floor_number}층 상성표 계산 실패.")
 
 def update_character_in_file(character_id: str, updated_char_data: dict):
     """ID를 기준으로 캐릭터 데이터를 찾아 업데이트합니다."""
